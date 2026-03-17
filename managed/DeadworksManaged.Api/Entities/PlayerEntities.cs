@@ -119,6 +119,81 @@ public unsafe class CModifierProperty : NativeEntity {
 		uint bit = 1u << (s & 0x1F);
 		return (_enabledStateMask.Get(Handle, index) & bit) != 0;
 	}
+
+	/// <summary>Returns all currently enabled modifier states on this entity.</summary>
+	public List<EModifierState> GetAllEnabledStates() {
+		var result = new List<EModifierState>();
+		int count = (int)EModifierState.Count;
+		int chunks = (count + 31) >> 5;
+		for (int i = 0; i < chunks; i++) {
+			uint mask = _enabledStateMask.Get(Handle, i);
+			if (mask == 0) continue;
+			for (int bit = 0; bit < 32; bit++) {
+				if ((mask & (1u << bit)) != 0) {
+					int stateVal = (i << 5) | bit;
+					if (stateVal < count)
+						result.Add((EModifierState)(ushort)stateVal);
+				}
+			}
+		}
+		return result;
+	}
+
+	/// <summary>Clears all enabled modifier state bits on this entity.</summary>
+	public void ClearAllStates() {
+		int count = (int)EModifierState.Count;
+		int chunks = (count + 31) >> 5;
+		for (int i = 0; i < chunks; i++) {
+			if (_enabledStateMask.Get(Handle, i) != 0)
+				_enabledStateMask.Set(Handle, i, 0);
+		}
+	}
+
+	/// <summary>Sets multiple modifier states at once.</summary>
+	public void SetModifierStates(IEnumerable<EModifierState> states, bool enabled) {
+		foreach (var state in states)
+			SetModifierState(state, enabled);
+	}
+
+	private static readonly SchemaArrayAccessor<uint> _disabledStateMask = new(Class, "m_bvDisabledStateMask"u8);
+
+	/// <summary>Sets or clears the specified disabled state bit. Disabled states override enabled states.</summary>
+	public void SetDisabledState(EModifierState state, bool disabled) {
+		int s = (int)state;
+		int index = s >> 5;
+		uint bit = 1u << (s & 0x1F);
+		uint current = _disabledStateMask.Get(Handle, index);
+		uint updated = disabled ? (current | bit) : (current & ~bit);
+		if (current != updated)
+			_disabledStateMask.Set(Handle, index, updated);
+	}
+
+	/// <summary>Returns true if the specified modifier state is disabled (overrides enabled).</summary>
+	public bool HasDisabledState(EModifierState state) {
+		int s = (int)state;
+		int index = s >> 5;
+		uint bit = 1u << (s & 0x1F);
+		return (_disabledStateMask.Get(Handle, index) & bit) != 0;
+	}
+
+	/// <summary>Returns all currently disabled modifier states on this entity.</summary>
+	public List<EModifierState> GetAllDisabledStates() {
+		var result = new List<EModifierState>();
+		int count = (int)EModifierState.Count;
+		int chunks = (count + 31) >> 5;
+		for (int i = 0; i < chunks; i++) {
+			uint mask = _disabledStateMask.Get(Handle, i);
+			if (mask == 0) continue;
+			for (int bit = 0; bit < 32; bit++) {
+				if ((mask & (1u << bit)) != 0) {
+					int stateVal = (i << 5) | bit;
+					if (stateVal < count)
+						result.Add((EModifierState)(ushort)stateVal);
+				}
+			}
+		}
+		return result;
+	}
 }
 
 /// <summary>

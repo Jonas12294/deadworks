@@ -444,6 +444,9 @@ internal static partial class PluginLoader
     public static void DispatchProcessUsercmds(ProcessUsercmdsEvent args)
         => DispatchToPlugins(p => p.OnProcessUsercmds(args), nameof(IDeadworksPlugin.OnProcessUsercmds));
 
+    public static HookResult DispatchAddModifier(AddModifierEvent args)
+        => DispatchToPluginsWithResult(p => p.OnAddModifier(args), nameof(IDeadworksPlugin.OnAddModifier));
+
     public static void UnloadAll()
     {
         _watcher?.Dispose();

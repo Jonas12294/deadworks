@@ -274,6 +274,23 @@ public static class EntryPoint
         PluginLoader.DispatchEntityAcceptInput(ent.DesignerName, evt);
     }
     [UnmanagedCallersOnly]
+    public static unsafe byte OnAddModifier(void* modifierProp, void* caster, byte* modifierNameUtf8, int debuffType, int team)
+    {
+        var modifierName = Marshal.PtrToStringUTF8((nint)modifierNameUtf8) ?? "";
+
+        var args = new AddModifierEvent
+        {
+            ModifierPropHandle = (nint)modifierProp,
+            Caster = caster != null ? new CBaseEntity((nint)caster) : null,
+            ModifierName = modifierName,
+            DebuffType = debuffType,
+            Team = team
+        };
+
+        return PluginLoader.DispatchAddModifier(args) >= HookResult.Stop ? (byte)1 : (byte)0;
+    }
+
+    [UnmanagedCallersOnly]
     public static unsafe ulong OnAbilityAttempt(int playerSlot, void* pawnEntity, ulong heldButtons, ulong changedButtons, ulong scrollButtons, ulong* outForcedButtons)
     {
         var args = new AbilityAttemptEvent

@@ -48,6 +48,8 @@ public:
     std::optional<bool> OnPre_CServerSideClientBase_FilterMessage(INetworkMessageProcessingPreFilter *thisptr, const CNetMessage *pData);
     // CBaseEntity
     bool OnPre_CBaseEntity_TakeDamageOld(CBaseEntity *entity, CTakeDamageInfo *info, CTakeDamageResult *result);
+    // CModifierProperty
+    bool OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, void *vdata, int iTeam);
     // CCitadelPlayerPawn
     bool OnPre_CCitadelPlayerPawn_ModifyCurrency(void *pawn, ECurrencyType nCurrencyType, int32_t nAmount,
                                                   ECurrencySource nSource, bool bSilent, bool bForceGain, bool bSpendOnly,

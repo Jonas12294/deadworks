@@ -111,6 +111,15 @@ SchemaKey GetOffset(const char *className, uint32_t classKey, const char *member
 
     return tableMap[memberKey];
 }
+int GetClassSize(const char *className) {
+    auto *pType = g_pSchemaSystem->FindTypeScopeForModule("server.dll");
+    if (!pType) return 0;
+
+    auto *pClassInfo = pType->FindDeclaredClass(className).Get();
+    if (!pClassInfo) return 0;
+
+    return pClassInfo->m_nSize;
+}
 } // namespace schema
 
 void NetworkVarStateChanged(uintptr_t pNetworkVar, uint32_t nOffset, uint32_t nNetworkStateChangedOffset) {

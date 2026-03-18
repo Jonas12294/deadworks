@@ -15,6 +15,7 @@ struct SchemaKey {
 namespace schema {
 int16_t FindChainOffset(const char *className, uint32_t classNameHash);
 SchemaKey GetOffset(const char *className, uint32_t classKey, const char *memberName, uint32_t memberKey);
+int GetClassSize(const char *className);
 } // namespace schema
 
 constexpr uint32_t val_32_const = 0x811c9dc5;
@@ -43,6 +44,20 @@ private:                                                                        
 public:
 
 #define DECLARE_SCHEMA_CLASS(className) DECLARE_SCHEMA_CLASS_BASE(className, 0)
+
+// Use when the C++ class name differs from the engine schema name —
+// e.g., an accessor overlay class that queries schema as a different type.
+#define DECLARE_SCHEMA_CLASS_ALIAS(cppClass, schemaName)                          \
+public:                                                                           \
+    const char *GetClassName() const { return m_className; }                      \
+                                                                                  \
+private:                                                                          \
+    using ThisClass = cppClass;                                                   \
+    static constexpr const char *m_className = #schemaName;                       \
+    static constexpr uint32_t m_classNameHash = hash_32_fnv1a_const(#schemaName); \
+    static constexpr int m_networkStateChangedOffset = 0;                         \
+                                                                                  \
+public:
 
 #define SCHEMA_FIELD_OFFSET(type, varName, extraOffset)                                                              \
     class varName##_proxy {                                                                                          \
@@ -99,3 +114,39 @@ public:
     } varName;
 
 #define SCHEMA_FIELD(type, varName) SCHEMA_FIELD_OFFSET(type, varName, 0)
+
+#define SCHEMA_FIELD_POINTER_OFFSET(type, varName, extraOffset)                                                      \
+    class varName##_proxy {                                                                                          \
+    public:                                                                                                          \
+        type *Get() {                                                                                                \
+            static const auto schemaKey = schema::GetOffset(m_className, m_classNameHash, #varName, m_varNameHash);  \
+            static const auto proxyOffsetInClass = offsetof(ThisClass, varName);                                     \
+            uintptr_t pThisClass = reinterpret_cast<uintptr_t>(this) - proxyOffsetInClass;                           \
+            return reinterpret_cast<type *>(pThisClass + schemaKey.Offset + extraOffset);                            \
+        }                                                                                                            \
+        void NetworkStateChanged() {                                                                                 \
+            static const auto schemaKey = schema::GetOffset(m_className, m_classNameHash, #varName, m_varNameHash);  \
+            static const auto chain = schema::FindChainOffset(m_className, m_classNameHash);                         \
+            static const auto proxyOffsetInClass = offsetof(ThisClass, varName);                                     \
+                                                                                                                     \
+            uintptr_t pThisClass = reinterpret_cast<uintptr_t>(this) - proxyOffsetInClass;                           \
+                                                                                                                     \
+            if (chain != 0 && schemaKey.Networked) {                                                                 \
+                ChainNetworkStateChanged(pThisClass + chain, schemaKey.Offset + extraOffset);                        \
+            } else if (schemaKey.Networked) {                                                                        \
+                if (!m_networkStateChangedOffset)                                                                    \
+                    EntityNetworkStateChanged(pThisClass, schemaKey.Offset + extraOffset);                           \
+                else                                                                                                 \
+                    NetworkVarStateChanged(pThisClass, schemaKey.Offset + extraOffset, m_networkStateChangedOffset); \
+            }                                                                                                        \
+        }                                                                                                            \
+        operator type *() { return Get(); }                                                                          \
+        type *operator()() { return Get(); }                                                                         \
+        type *operator->() { return Get(); }                                                                         \
+                                                                                                                     \
+    private:                                                                                                         \
+        varName##_proxy(const varName##_proxy &) = delete;                                                           \
+        static constexpr auto m_varNameHash = hash_32_fnv1a_const(#varName);                                         \
+    } varName;
+
+#define SCHEMA_FIELD_POINTER(type, varName) SCHEMA_FIELD_POINTER_OFFSET(type, varName, 0)

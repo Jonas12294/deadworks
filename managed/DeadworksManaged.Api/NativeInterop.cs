@@ -34,7 +34,7 @@ internal static unsafe class NativeInterop
 	public static delegate* unmanaged[Cdecl]<int, byte*, void> ClientCommand => (delegate* unmanaged[Cdecl]<int, byte*, void>)_cb.ClientCommand;
 	public static delegate* unmanaged[Cdecl]<void*, void> RemoveEntity => (delegate* unmanaged[Cdecl]<void*, void>)_cb.RemoveEntity;
 	public static delegate* unmanaged[Cdecl]<void*, void*, byte, byte, byte, byte, void> SetPawn => (delegate* unmanaged[Cdecl]<void*, void*, byte, byte, byte, byte, void>)_cb.SetPawn;
-	public static delegate* unmanaged[Cdecl]<void*, byte*, void*, void*, void*, int, void*> AddModifier => (delegate* unmanaged[Cdecl]<void*, byte*, void*, void*, void*, int, void*>)_cb.AddModifier;
+	public static delegate* unmanaged[Cdecl]<void*, byte*, void*, void*, void*, int, byte**, float*, int, void*> AddModifier => (delegate* unmanaged[Cdecl]<void*, byte*, void*, void*, void*, int, byte**, float*, int, void*>)_cb.AddModifier;
 	public static delegate* unmanaged[Cdecl]<void*> KV3Create => (delegate* unmanaged[Cdecl]<void*>)_cb.KV3Create;
 	public static delegate* unmanaged[Cdecl]<void*, void> KV3Destroy => (delegate* unmanaged[Cdecl]<void*, void>)_cb.KV3Destroy;
 	public static delegate* unmanaged[Cdecl]<void*, byte*, byte*, void> KV3SetString => (delegate* unmanaged[Cdecl]<void*, byte*, byte*, void>)_cb.KV3SetString;

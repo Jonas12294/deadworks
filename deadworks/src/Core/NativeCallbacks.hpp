@@ -43,7 +43,8 @@ struct NativeCallbacks {
     void(__cdecl *ClientCommand)(int slot, const char *command);
     void(__cdecl *RemoveEntity)(void *entity);
     void(__cdecl *SetPawn)(void *controller, void *pawn, uint8_t bRetainOldPawnTeam, uint8_t bCopyMovementState, uint8_t bAllowTeamMismatch, uint8_t bPreserveMovementState);
-    void *(__cdecl *AddModifier)(void *entity, const char *modifierName, void *kv3, void *caster, void *ability, int32_t team);
+    void *(__cdecl *AddModifier)(void *entity, const char *modifierName, void *kv3, void *caster, void *ability, int32_t team,
+                                 const char *const *overrideNames, const float *overrideValues, int32_t overrideCount);
     void *(__cdecl *KV3Create)();
     void(__cdecl *KV3Destroy)(void *kv3);
     void(__cdecl *KV3SetString)(void *kv3, const char *key, const char *value);
@@ -90,7 +91,6 @@ struct NativeCallbacks {
     void(__cdecl *DestroyDamageInfo)(void *info);
     void(__cdecl *TakeDamage)(void *victim, void *info);
     void(__cdecl *PrecacheHero)(const char *heroName);
-    void(__cdecl *PrecacheAllHeroes)();
     void(__cdecl *RegisterConCommand)(const char *name, const char *description, uint64_t flags);
     void(__cdecl *UnregisterConCommand)(const char *name);
     uint64_t(__cdecl *CreateConVar)(const char *name, const char *defaultValue, const char *description, uint64_t flags);

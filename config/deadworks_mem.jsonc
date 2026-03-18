@@ -48,6 +48,17 @@
 			"library": "server.dll",
 			"windows": "44 89 44 24 ?? 48 89 54 24 ?? 53 55 56 57 41 55"
 		},
+		// Auto-register processor for modifier ability values (sub_18051FB50).
+		// Called during OnCreated to resolve m_vecAutoRegisterModifierValueFromAbilityPropertyName.
+		"CCitadelModifier::AutoRegisterAbilityValues": {
+			"library": "server.dll",
+			"windows": "48 89 4C 24 08 53 57 48 81 EC B8 00 00 00 48 8B 01"
+		},
+		// VData lookup by type+hash (sub_180D93180). Used for lazy ability value resolution.
+		"LookupVDataByHash": {
+			"library": "server.dll",
+			"windows": "40 53 48 83 EC 20 89 54 24 38 8B D9 85 D2 74 64"
+		},
 		"CEntitySystem::CreateEntityByName": {
 			"library": "server.dll",
 			"windows": "48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 41 8B C0"

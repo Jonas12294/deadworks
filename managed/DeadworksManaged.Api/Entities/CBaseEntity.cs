@@ -140,7 +140,66 @@ public unsafe class CBaseEntity : NativeEntity {
 				kv != null ? (void*)kv.Handle : null,
 				caster != null ? (void*)caster.Handle : null,
 				ability != null ? (void*)ability.Handle : null,
-				team);
+				team, null, null, 0);
+			return result != null ? new CBaseModifier((nint)result) : null;
+		}
+	}
+
+	/// <summary>
+	/// Adds a modifier with per-instance ability property value overrides.
+	/// Use this to apply modifiers without a real ability, or to override the default
+	/// values from the ability's property map. Property names match the VData's
+	/// m_vecAutoRegisterModifierValueFromAbilityPropertyName entries.
+	/// </summary>
+	/// <example>
+	/// pawn.AddModifier("ability_doorman_bomb/debuff", kv: kv,
+	///     abilityValues: new() { ["SlowPercent"] = 100.0f });
+	/// </example>
+	public CBaseModifier? AddModifier(string name, Dictionary<string, float> abilityValues,
+		KeyValues3? kv = null, CBaseEntity? caster = null, CBaseEntity? ability = null, int team = 0) {
+
+		if (abilityValues.Count == 0)
+			return AddModifier(name, kv, caster, ability, team);
+
+		Span<byte> utf8Name = Utf8.Encode(name, stackalloc byte[Utf8.Size(name)]);
+
+		int count = abilityValues.Count;
+		Span<float> values = count <= 16 ? stackalloc float[count] : new float[count];
+
+		// Encode all property names as null-terminated UTF-8 into a contiguous buffer
+		int totalBytes = 0;
+		foreach (var kvp in abilityValues)
+			totalBytes += Utf8.Size(kvp.Key);
+		Span<byte> nameBuf = totalBytes <= 1024 ? stackalloc byte[totalBytes] : new byte[totalBytes];
+
+		int offset = 0;
+		int idx = 0;
+		foreach (var kvp in abilityValues) {
+			int len = Utf8.Size(kvp.Key);
+			Utf8.Encode(kvp.Key, nameBuf.Slice(offset, len));
+			values[idx] = kvp.Value;
+			offset += len;
+			idx++;
+		}
+
+		fixed (byte* namePtr = utf8Name)
+		fixed (float* valPtr = values)
+		fixed (byte* nameBufPtr = nameBuf) {
+			byte** namePtrs = stackalloc byte*[count];
+			int off = 0;
+			idx = 0;
+			foreach (var kvp in abilityValues) {
+				namePtrs[idx] = nameBufPtr + off;
+				off += Utf8.Size(kvp.Key);
+				idx++;
+			}
+
+			var result = NativeInterop.AddModifier(
+				(void*)Handle, namePtr,
+				kv != null ? (void*)kv.Handle : null,
+				caster != null ? (void*)caster.Handle : null,
+				ability != null ? (void*)ability.Handle : null,
+				team, namePtrs, valPtr, count);
 			return result != null ? new CBaseModifier((nint)result) : null;
 		}
 	}

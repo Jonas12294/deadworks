@@ -110,10 +110,20 @@ public class DeathmatchPlugin : DeadworksPluginBase {
 		var pawn = ctx.Controller?.GetHeroPawn()?.As<CCitadelPlayerPawn>();
 		if (pawn == null) return HookResult.Handled;
 
-		using var kv3 = new KeyValues3();
-		kv3.SetFloat("duration", 10.0f);
-		kv3.SetFloat("barrier_health", 500.0f);
-		var mod = pawn.AddModifier("modifier_familiar_barrier", kv: kv3, caster: pawn);
+		using var kv = new KeyValues3();
+		kv.SetFloat("duration", 10.0f);
+		/*pawn.AddModifier("citadel_ability_tangotether/citadel_modifier_tangotether_tether/citadel_modifier_tangotether_tether_receiver",
+			abilityValues: new() {
+				["BonusFireRate"] = 1000,
+			}, kv: kv);*/
+
+		var ability = pawn.AbilityComponent.GetAbilityBySlot(EAbilitySlot.Innate1);
+		pawn.AddModifier("synth_affliction/modifier_synth_affliction_debuff",
+			abilityValues: new() { ["DPS"] = 5.0f },
+			kv: kv, ability: ability);
+
+		// var ability = pawn.AbilityComponent.GetAbilityBySlot(EAbilitySlot.Innate1);
+		// pawn.AddModifier("modifier_citadel_knockdown", kv: kv);
 
 		return HookResult.Handled;
 	}
@@ -131,6 +141,7 @@ public class DeathmatchPlugin : DeadworksPluginBase {
 			var pos = spawn.Pos.Length >= 3 ? new Vector3(spawn.Pos[0], spawn.Pos[1], spawn.Pos[2]) : (Vector3?)null;
 			var ang = spawn.Ang.Length >= 3 ? new Vector3(spawn.Ang[0], spawn.Ang[1], spawn.Ang[2]) : (Vector3?)null;
 			pawn.Teleport(position: pos, angles: ang);
+			pawn.Health = pawn.MaxHealth;
 		}
 
 		return HookResult.Continue;

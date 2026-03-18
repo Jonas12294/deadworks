@@ -5,9 +5,15 @@
 #include "Hooks/CBaseEntity.hpp"
 #include "../Memory/MemoryDataLoader.hpp"
 #include "../SDK/CBaseEntity.hpp"
+#include "../SDK/Schema/Schema.hpp"
 
 using namespace deadworks;
 using namespace deadworks::offsets;
+
+static int GetCTakeDamageInfoSize() {
+    static int size = schema::GetClassSize("CTakeDamageInfo");
+    return size ? size : 0x100; // fallback to known size if schema lookup fails
+}
 
 // --- Function pointer types ---
 
@@ -25,17 +31,22 @@ static void __cdecl NativeHurtEntity(void *victim, void *attacker, void *inflict
     if (!victim) return;
     if (!g_pCTakeDamageInfoCtor || !g_pCTakeDamageInfoDtor) return;
 
-    alignas(16) uint8_t infoBuffer[kCTakeDamageInfoSize]{};
-    g_pCTakeDamageInfoCtor(infoBuffer, inflictor, attacker ? attacker : inflictor, ability, damage, damageType, 0);
-    hooks::g_CBaseEntity_TakeDamageOld.thiscall<void>(victim, infoBuffer, nullptr);
-    g_pCTakeDamageInfoDtor(infoBuffer);
+    auto size = GetCTakeDamageInfoSize();
+    auto *info = static_cast<uint8_t *>(_aligned_malloc(size, 16));
+    if (!info) return;
+    std::memset(info, 0, size);
+    g_pCTakeDamageInfoCtor(info, inflictor, attacker ? attacker : inflictor, ability, damage, damageType, 0);
+    hooks::g_CBaseEntity_TakeDamageOld.thiscall<void>(victim, info, nullptr);
+    g_pCTakeDamageInfoDtor(info);
+    _aligned_free(info);
 }
 
 static void *__cdecl NativeCreateDamageInfo(void *inflictor, void *attacker, void *ability, float damage, int32_t damageType) {
     if (!g_pCTakeDamageInfoCtor) return nullptr;
-    auto *info = static_cast<uint8_t *>(_aligned_malloc(kCTakeDamageInfoSize, 16));
+    auto size = GetCTakeDamageInfoSize();
+    auto *info = static_cast<uint8_t *>(_aligned_malloc(size, 16));
     if (!info) return nullptr;
-    std::memset(info, 0, kCTakeDamageInfoSize);
+    std::memset(info, 0, size);
     g_pCTakeDamageInfoCtor(info, inflictor, attacker ? attacker : inflictor, ability, damage, damageType, 0);
     return info;
 }

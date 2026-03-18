@@ -287,7 +287,7 @@ bool Deadworks::OnPre_CBaseEntity_TakeDamageOld(CBaseEntity *entity, CTakeDamage
     return false;
 }
 
-bool Deadworks::OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, void *vdata, int iTeam) {
+bool Deadworks::OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, uint32_t hAbility, void *vdata, int iTeam) {
     if (!m_managed.onAddModifier || !modifierProp || !vdata)
         return false;
 
@@ -299,7 +299,7 @@ bool Deadworks::OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEnt
     // CModifierVData::m_eDebuffType at offset 1008 (ModifierDebuffType_t: 0=enemy, 1=always, 2=never)
     int32_t debuffType = *reinterpret_cast<int32_t *>(reinterpret_cast<uintptr_t>(vdata) + 1008);
 
-    return m_managed.onAddModifier(modifierProp, pCaster, name, debuffType, iTeam);
+    return m_managed.onAddModifier(modifierProp, pCaster, name, debuffType, iTeam, hAbility);
 }
 
 bool Deadworks::OnPre_CCitadelPlayerPawn_ModifyCurrency(void *pawn, ECurrencyType nCurrencyType, int32_t nAmount,

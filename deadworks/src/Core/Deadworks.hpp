@@ -49,7 +49,7 @@ public:
     // CBaseEntity
     bool OnPre_CBaseEntity_TakeDamageOld(CBaseEntity *entity, CTakeDamageInfo *info, CTakeDamageResult *result);
     // CModifierProperty
-    bool OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, void *vdata, int iTeam);
+    bool OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, uint32_t hAbility, void *vdata, int iTeam);
     // CCitadelPlayerPawn
     bool OnPre_CCitadelPlayerPawn_ModifyCurrency(void *pawn, ECurrencyType nCurrencyType, int32_t nAmount,
                                                   ECurrencySource nSource, bool bSilent, bool bForceGain, bool bSpendOnly,

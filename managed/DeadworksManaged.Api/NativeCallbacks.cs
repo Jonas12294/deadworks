@@ -97,4 +97,5 @@ internal struct NativeCallbacks
 	public nint ToggleActivate;
 	public nint ServerControllerCommand;
 	public nint SetEngineLogCallback;
+	public nint GetPawnHeroID;
 }

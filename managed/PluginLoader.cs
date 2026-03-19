@@ -438,6 +438,9 @@ internal static partial class PluginLoader
     public static void DispatchEntityEndTouch(EntityTouchEvent args)
         => DispatchToPlugins(p => p.OnEntityEndTouch(args), nameof(IDeadworksPlugin.OnEntityEndTouch));
 
+    public static HookResult DispatchAddModifier(AddModifierEvent args)
+        => DispatchToPluginsWithResult(p => p.OnAddModifier(args), nameof(IDeadworksPlugin.OnAddModifier));
+
     public static void DispatchAbilityAttempt(AbilityAttemptEvent args)
         => DispatchToPlugins(p => p.OnAbilityAttempt(args), nameof(IDeadworksPlugin.OnAbilityAttempt));
 

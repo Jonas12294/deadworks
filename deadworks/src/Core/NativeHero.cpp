@@ -189,6 +189,24 @@ bool deadworks::IsHeroPrecacheResolved() {
     return g_pGetHeroTable != nullptr;
 }
 
+static int __cdecl NativeGetPawnHeroID(void *pawn) {
+    if (!pawn)
+        return 0;
+    // Read pawn's SubclassVData pointer: at m_nSubclassID + 4 bytes (CUtlStringToken is 4 bytes)
+    static constexpr auto subclassIdHash = hash_32_fnv1a_const("m_nSubclassID");
+    static constexpr auto baseEntityHash = hash_32_fnv1a_const("CBaseEntity");
+    auto subclassKey = schema::GetOffset("CBaseEntity", baseEntityHash, "m_nSubclassID", subclassIdHash);
+    if (subclassKey.Offset == 0) return 0;
+    void *vdata = *reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(pawn) + subclassKey.Offset + 4);
+    if (!vdata) return 0;
+    // Read m_HeroID from CitadelHeroData_t
+    static constexpr auto heroIdFieldHash = hash_32_fnv1a_const("m_HeroID");
+    static constexpr auto heroDataHash = hash_32_fnv1a_const("CitadelHeroData_t");
+    auto heroIdKey = schema::GetOffset("CitadelHeroData_t", heroDataHash, "m_HeroID", heroIdFieldHash);
+    if (heroIdKey.Offset == 0) return 0;
+    return *reinterpret_cast<int *>(reinterpret_cast<uintptr_t>(vdata) + heroIdKey.Offset);
+}
+
 // ---------------------------------------------------------------------------
 // Populate
 // ---------------------------------------------------------------------------
@@ -202,4 +220,5 @@ void deadworks::PopulateHeroNatives(NativeCallbacks &cb) {
     cb.PrecacheResource = &NativePrecacheResource;
     cb.PrecacheHero = &NativePrecacheHero;
     cb.Teleport = &NativeTeleport;
+    cb.GetPawnHeroID = &NativeGetPawnHeroID;
 }

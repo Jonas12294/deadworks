@@ -107,6 +107,7 @@ struct NativeCallbacks {
     void(__cdecl *ToggleActivate)(void *ability, uint8_t activate);
     void(__cdecl *ServerControllerCommand)(void *controller, const char *command);
     void(__cdecl *SetEngineLogCallback)(void(__cdecl *callback)(const char *message));
+    int32_t(__cdecl *GetPawnHeroID)(void *pawn);
 };
 
 void PopulateNativeCallbacks(NativeCallbacks &callbacks);

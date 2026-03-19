@@ -380,6 +380,22 @@ public sealed unsafe class CCitadelPlayerPawn : CBasePlayerPawn {
 		return AbilityComponent.GetAbilityBySlot(slot);
 	}
 
+	/// <summary>Gets the hero ID for this pawn by reading CitadelHeroData_t.m_HeroID from the pawn's VData. Returns 0 if not found.</summary>
+	public int HeroID => NativeInterop.GetPawnHeroID((void*)Handle);
+
+	/// <summary>Gets the hero enum value for this pawn, or null if the hero ID doesn't match any known hero.</summary>
+	public Heroes? Hero {
+		get {
+			int id = HeroID;
+			if (id == 0) return null;
+			foreach (var h in Enum.GetValues<Heroes>()) {
+				var data = h.GetHeroData();
+				if (data != null && data.HeroID == id) return h;
+			}
+			return null;
+		}
+	}
+
 	/// <summary>Activates or deactivates an ability on this pawn (toggle). This is the actual activation path for most abilities.</summary>
 	public void ToggleActivate(CBaseEntity ability, bool activate = true) {
 		AbilityComponent.ToggleActivate(ability, activate);

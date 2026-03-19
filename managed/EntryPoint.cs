@@ -291,6 +291,31 @@ public static class EntryPoint
     }
 
     [UnmanagedCallersOnly]
+    public static unsafe byte OnAddModifier(void* modifierProp, void* caster, byte* modifierNameUtf8, int debuffType, int team, uint hAbility)
+    {
+        var modifierName = Marshal.PtrToStringUTF8((nint)modifierNameUtf8) ?? "";
+
+        CBaseEntity? ability = null;
+        if (hAbility != 0xFFFFFFFF) {
+            void* abilityPtr = NativeInterop.GetEntityFromHandle(hAbility);
+            if (abilityPtr != null)
+                ability = new CBaseEntity((nint)abilityPtr);
+        }
+
+        var args = new AddModifierEvent
+        {
+            ModifierPropHandle = (nint)modifierProp,
+            Caster = caster != null ? new CBaseEntity((nint)caster) : null,
+            Ability = ability,
+            ModifierName = modifierName,
+            DebuffType = debuffType,
+            Team = team
+        };
+
+        return PluginLoader.DispatchAddModifier(args) >= HookResult.Stop ? (byte)1 : (byte)0;
+    }
+
+    [UnmanagedCallersOnly]
     public static unsafe void OnProcessUsercmds(int playerSlot, byte* batchBytes, int batchLen, int numCmds, byte paused, float margin, byte* outBatchBytes, int* outBatchLen)
     {
         *outBatchLen = 0;

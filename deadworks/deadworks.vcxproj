@@ -253,6 +253,7 @@ xcopy "$(ProjectDir)..\config\deadworks_mem.jsonc" "$(DeadlockDir)\..\..\citadel
     <ClCompile Include="src\Core\Hooks\EntityIO.cpp" />
     <ClCompile Include="src\Core\Hooks\ProcessUsercmds.cpp" />
     <ClCompile Include="src\Core\Hooks\AbilityThink.cpp" />
+    <ClCompile Include="src\Core\Hooks\CModifierProperty.cpp" />
     <ClCompile Include="src\Core\Deadworks.cpp" />
     <ClCompile Include="src\Core\NativeCallbacks.cpp" />
     <ClCompile Include="src\Core\NativeAbility.cpp" />
@@ -307,6 +308,7 @@ xcopy "$(ProjectDir)..\config\deadworks_mem.jsonc" "$(DeadlockDir)\..\..\citadel
     <ClInclude Include="src\Core\Hooks\EntityIO.hpp" />
     <ClInclude Include="src\Core\Hooks\ProcessUsercmds.hpp" />
     <ClInclude Include="src\Core\Hooks\AbilityThink.hpp" />
+    <ClInclude Include="src\Core\Hooks\CModifierProperty.hpp" />
     <ClInclude Include="src\Core\Hooks\BuildGameSessionManifest.hpp" />
     <ClInclude Include="src\Core\Deadworks.hpp" />
     <ClInclude Include="src\Core\NativeCallbacks.hpp" />

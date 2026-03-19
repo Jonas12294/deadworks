@@ -18,6 +18,7 @@
 #include "Hooks/TraceShape.hpp"
 #include "Hooks/ProcessUsercmds.hpp"
 #include "Hooks/AbilityThink.hpp"
+#include "Hooks/CModifierProperty.hpp"
 
 #include "../Memory/MemoryDataLoader.hpp"
 #include "../SDK/CBaseEntity.hpp"
@@ -216,6 +217,9 @@ void Deadworks::PostInit() {
     HookInline(hooks::g_AbilityThink,
                "CCitadelPlayerPawn::AbilityThink",
                &hooks::Hook_AbilityThink);
+    HookInline(hooks::g_CModifierProperty_AddModifier,
+               "CModifierProperty::AddModifier",
+               &hooks::Hook_CModifierProperty_AddModifier);
 
     // Resolve statics needed by Native* callbacks
     ResolveNativeStatics();
@@ -281,6 +285,19 @@ bool Deadworks::OnPre_CBaseEntity_TakeDamageOld(CBaseEntity *entity, CTakeDamage
     if (m_managed.onTakeDamageOld)
         return m_managed.onTakeDamageOld(entity, info, result);
     return false;
+}
+
+bool Deadworks::OnPre_CModifierProperty_AddModifier(void *modifierProp, CBaseEntity *pCaster, uint32_t hAbility, void *vdata, int iTeam) {
+    if (!m_managed.onAddModifier || !modifierProp || !vdata)
+        return false;
+
+    auto *name = *reinterpret_cast<const char **>(reinterpret_cast<uintptr_t>(vdata) + 0x10);
+    if (!name)
+        return false;
+
+    int32_t debuffType = *reinterpret_cast<int32_t *>(reinterpret_cast<uintptr_t>(vdata) + 1008);
+
+    return m_managed.onAddModifier(modifierProp, pCaster, name, debuffType, iTeam, hAbility);
 }
 
 bool Deadworks::OnPre_CCitadelPlayerPawn_ModifyCurrency(void *pawn, ECurrencyType nCurrencyType, int32_t nAmount,

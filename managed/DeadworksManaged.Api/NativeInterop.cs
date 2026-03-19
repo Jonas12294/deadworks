@@ -97,4 +97,5 @@ internal static unsafe class NativeInterop
 	public static delegate* unmanaged[Cdecl]<void*, byte, void> ToggleActivate => (delegate* unmanaged[Cdecl]<void*, byte, void>)_cb.ToggleActivate;
 	public static delegate* unmanaged[Cdecl]<void*, byte*, void> ServerControllerCommand => (delegate* unmanaged[Cdecl]<void*, byte*, void>)_cb.ServerControllerCommand;
 	public static delegate* unmanaged[Cdecl]<nint, void> SetEngineLogCallback => (delegate* unmanaged[Cdecl]<nint, void>)_cb.SetEngineLogCallback;
+	public static delegate* unmanaged[Cdecl]<void*, int> GetPawnHeroID => (delegate* unmanaged[Cdecl]<void*, int>)_cb.GetPawnHeroID;
 }

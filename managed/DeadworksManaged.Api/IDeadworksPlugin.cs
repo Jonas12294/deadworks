@@ -99,6 +99,9 @@ public interface IDeadworksPlugin {
 	/// </summary>
 	void OnAbilityAttempt(AbilityAttemptEvent args) { }
 
+	/// <summary>Called when a modifier is about to be applied. Return Stop to prevent it.</summary>
+	HookResult OnAddModifier(AddModifierEvent args) => HookResult.Continue;
+
 	/// <summary>Called when a player's usercmds are being processed.</summary>
 	void OnProcessUsercmds(ProcessUsercmdsEvent args) { }
 }

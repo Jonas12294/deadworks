@@ -71,4 +71,5 @@ void deadworks::InitializeManagedCallbacks(DotNetHost &host, ManagedCallbacks &m
     BindCallback(host, assemblyPath, managed.onProcessUsercmds, L"OnProcessUsercmds");
     BindCallback(host, assemblyPath, managed.onAbilityAttempt, L"OnAbilityAttempt");
     BindCallback(host, assemblyPath, g_ManagedConCommandDispatch, L"OnConCommandDispatch");
+    BindCallback(host, assemblyPath, managed.onAddModifier, L"OnAddModifier");
 }

@@ -74,6 +74,9 @@ public:
     void OnPre_ProcessUsercmds(int playerSlot, const uint8_t *batchBytes, int batchLen, int numCmds, bool paused, float margin, uint8_t *outBytes, int *outLen);
     // Ability think — returns bitmask of buttons to block, outForcedButtons receives bits to force
     uint64_t OnPre_AbilityThink(int playerSlot, void *pawnEntity, uint64_t heldButtons, uint64_t changedButtons, uint64_t scrollButtons, uint64_t *outForcedButtons);
+    // AddModifier
+    bool OnPre_AddModifier(void *modifierProp, CBaseEntity *&pCaster, uint32_t &hAbility, int &iTeam,
+                           void *vdata, void *pParams, void *pKV);
 
     template <typename T>
     T *GetEntity(CEntityIndex index) {

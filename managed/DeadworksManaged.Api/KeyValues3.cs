@@ -18,12 +18,22 @@ public sealed unsafe class KeyValues3 : IDisposable
 	public KeyValues3()
 	{
 		Handle = (nint)NativeInterop.KV3Create();
+		_owned = true;
 	}
+
+	/// <summary>Wraps an existing native KeyValues3 pointer without taking ownership.</summary>
+	internal KeyValues3(nint handle)
+	{
+		Handle = handle;
+		_owned = false;
+	}
+
+	private readonly bool _owned;
 
 	/// <summary>Frees the native KeyValues3 object. Must be called after the KV3 has been consumed by the engine.</summary>
 	public void Dispose()
 	{
-		if (Handle != 0)
+		if (Handle != 0 && _owned)
 		{
 			NativeInterop.KV3Destroy((void*)Handle);
 			Handle = 0;

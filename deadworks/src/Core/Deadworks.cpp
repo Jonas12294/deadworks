@@ -18,6 +18,7 @@
 #include "Hooks/TraceShape.hpp"
 #include "Hooks/ProcessUsercmds.hpp"
 #include "Hooks/AbilityThink.hpp"
+#include "Hooks/AddModifier.hpp"
 
 #include "../Memory/MemoryDataLoader.hpp"
 #include "../SDK/CBaseEntity.hpp"
@@ -216,6 +217,9 @@ void Deadworks::PostInit() {
     HookInline(hooks::g_AbilityThink,
                "CCitadelPlayerPawn::AbilityThink",
                &hooks::Hook_AbilityThink);
+    HookInline(hooks::g_CModifierProperty_AddModifier,
+               "CModifierProperty::AddModifier",
+               &hooks::Hook_CModifierProperty_AddModifier);
 
     // Resolve statics needed by Native* callbacks
     ResolveNativeStatics();
@@ -512,6 +516,17 @@ uint64_t Deadworks::OnPre_AbilityThink(int playerSlot, void *pawnEntity, uint64_
     if (m_managed.onAbilityAttempt)
         return m_managed.onAbilityAttempt(playerSlot, pawnEntity, heldButtons, changedButtons, scrollButtons, outForcedButtons);
     return 0;
+}
+
+bool Deadworks::OnPre_AddModifier(void *modifierProp, CBaseEntity *&pCaster, uint32_t &hAbility, int &iTeam,
+                                   void *vdata, void *pParams, void *pKV) {
+    if (m_managed.onAddModifier) {
+        void *casterPtr = pCaster;
+        int result = m_managed.onAddModifier(modifierProp, &casterPtr, &hAbility, &iTeam, vdata, pParams, pKV);
+        pCaster = static_cast<CBaseEntity *>(casterPtr);
+        return result >= 1;
+    }
+    return false;
 }
 
 void Deadworks::GetInterfaceFactories() {

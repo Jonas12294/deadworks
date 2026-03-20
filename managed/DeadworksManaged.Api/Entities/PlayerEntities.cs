@@ -99,6 +99,11 @@ public unsafe class CModifierProperty : NativeEntity {
 	internal CModifierProperty(nint handle) : base(handle) { }
 	private static ReadOnlySpan<byte> Class => "CModifierProperty"u8;
 
+	private static readonly SchemaAccessor<uint> _hOwner = new(Class, "m_hOwner"u8);
+
+	/// <summary>The entity that owns this modifier property.</summary>
+	public CBaseEntity? Owner => CBaseEntity.FromHandle(_hOwner.Get(Handle));
+
 	private static readonly SchemaArrayAccessor<uint> _enabledStateMask = new(Class, "m_bvEnabledStateMask"u8);
 
 	/// <summary>Sets or clears the specified modifier state bit on this entity, notifying the network if changed.</summary>

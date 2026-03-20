@@ -357,4 +357,31 @@ public static class EntryPoint
             *outBatchLen = writeOffset;
         }
     }
+
+    [UnmanagedCallersOnly]
+    public static unsafe int OnAddModifier(void* modifierProp, void** pCaster, uint* pHAbility, int* pITeam, void* vdata, void* modifierParams, void* kv)
+    {
+        if (modifierProp == null || vdata == null)
+            return 0;
+
+        var args = new AddModifierEvent
+        {
+            ModifierProperty = new CModifierProperty((nint)modifierProp),
+            Caster = new CBaseEntity((nint)(*pCaster)),
+            AbilityHandle = *pHAbility,
+            Team = *pITeam,
+            ModifierVData = new CCitadelModifierVData((nint)vdata),
+            ModifierParams = modifierParams != null ? new KeyValues3((nint)modifierParams) : null,
+            KeyValues = kv != null ? new KeyValues3((nint)kv) : null
+        };
+
+        var result = PluginLoader.DispatchAddModifier(args);
+
+        // Write back modified values
+        *pCaster = (void*)args.Caster.Handle;
+        *pHAbility = args.AbilityHandle;
+        *pITeam = args.Team;
+
+        return (int)result;
+    }
 }

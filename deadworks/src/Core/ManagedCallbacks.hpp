@@ -32,6 +32,7 @@ struct ManagedCallbacks {
     using OnEntityAcceptInputFn = void(CORECLR_DELEGATE_CALLTYPE *)(void *entity, void *activator, void *caller, const char *inputName, const char *value);
     using OnProcessUsercmdsFn = void(CORECLR_DELEGATE_CALLTYPE *)(int playerSlot, const uint8_t *batchBytes, int batchLen, int numCmds, uint8_t paused, float margin, uint8_t *outBatchBytes, int *outBatchLen);
     using OnAbilityAttemptFn = uint64_t(CORECLR_DELEGATE_CALLTYPE *)(int playerSlot, void *pawnEntity, uint64_t heldButtons, uint64_t changedButtons, uint64_t scrollButtons, uint64_t *outForcedButtons);
+    using OnAddModifierFn = int(CORECLR_DELEGATE_CALLTYPE *)(void *modifierProp, void **pCaster, uint32_t *pHAbility, int32_t *pITeam, void *vdata, void *params, void *kv);
 
     OnChatMessageFn onChatMessage = nullptr;
     OnStartupServerFn onStartupServer = nullptr;
@@ -55,6 +56,7 @@ struct ManagedCallbacks {
     OnEntityAcceptInputFn onEntityAcceptInput = nullptr;
     OnProcessUsercmdsFn onProcessUsercmds = nullptr;
     OnAbilityAttemptFn onAbilityAttempt = nullptr;
+    OnAddModifierFn onAddModifier = nullptr;
 };
 
 void InitializeManagedCallbacks(DotNetHost &host, ManagedCallbacks &managed);

@@ -101,4 +101,10 @@ public interface IDeadworksPlugin {
 
 	/// <summary>Called when a player's usercmds are being processed.</summary>
 	void OnProcessUsercmds(ProcessUsercmdsEvent args) { }
+
+	/// <summary>
+	/// Called when a modifier is about to be applied to an entity.
+	/// Return Stop to block the modifier from being applied.
+	/// </summary>
+	HookResult OnAddModifier(AddModifierEvent args) => HookResult.Continue;
 }

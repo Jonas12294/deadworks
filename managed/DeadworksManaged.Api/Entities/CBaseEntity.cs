@@ -30,6 +30,23 @@ public unsafe class CBaseEntity : NativeEntity {
 		return ptr != 0 ? new CBaseEntity(ptr) : null;
 	}
 
+	/// <summary>Gets a typed entity by handle. Returns null if invalid or native class doesn't match T.</summary>
+	public static T? FromHandle<T>(uint handle) where T : CBaseEntity {
+		if (handle == 0xFFFFFFFF) return null;
+		var ptr = (nint)NativeInterop.GetEntityFromHandle(handle);
+		if (ptr == 0) return null;
+		var entity = new CBaseEntity(ptr);
+		return NativeEntityFactory.IsMatch<T>(entity.Classname) ? NativeEntityFactory.Create<T>(ptr) : null;
+	}
+
+	/// <summary>Gets a typed entity by index. Returns null if invalid or native class doesn't match T.</summary>
+	public static T? FromIndex<T>(int index) where T : CBaseEntity {
+		var ptr = (nint)NativeInterop.GetEntityByIndex(index);
+		if (ptr == 0) return null;
+		var entity = new CBaseEntity(ptr);
+		return NativeEntityFactory.IsMatch<T>(entity.Classname) ? NativeEntityFactory.Create<T>(ptr) : null;
+	}
+
 	/// <summary>The designer/map name (e.g. "npc_boss_tier3", "player").</summary>
 	public string DesignerName {
 		get {

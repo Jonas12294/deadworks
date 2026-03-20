@@ -18,6 +18,8 @@ public readonly record struct Duration
     internal static Duration FromTicks(long ticks) => new(ticks, DurationKind.Ticks);
     internal static Duration FromMilliseconds(long ms) => new(ms, DurationKind.RealTime);
     internal static Duration FromSeconds(double seconds) => new((long)(seconds * 1000), DurationKind.RealTime);
+
+    public static implicit operator Duration(TimeSpan timeSpan) => FromMilliseconds((long)timeSpan.TotalMilliseconds);
 }
 
 internal enum DurationKind

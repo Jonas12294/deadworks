@@ -1,0 +1,115 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache protobuf
+        id: cache-protobuf
+        uses: actions/cache@v4
+        with:
+          path: protobuf-3.21.8
+          key: protobuf-3.21.8-msvc-static-mt-v2
+
+      - name: Build protobuf 3.21.8
+        if: steps.cache-protobuf.outputs.cache-hit != 'true'
+        run: |
+          git clone --branch v3.21.8 --depth 1 https://github.com/protocolbuffers/protobuf.git protobuf-3.21.8
+          cmake -S protobuf-3.21.8/cmake -B protobuf-3.21.8/build -A x64 -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_MSVC_STATIC_RUNTIME=ON -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake --build protobuf-3.21.8/build --config Release
+
+      - name: Find nethost path
+        id: nethost
+        shell: pwsh
+        run: |
+          $nethostDir = Get-ChildItem "$env:ProgramFiles\dotnet\packs\Microsoft.NETCore.App.Host.win-x64" -Directory |
+            Sort-Object { [version]$_.Name } -Descending |
+            Select-Object -First 1
+          $path = Join-Path $nethostDir.FullName "runtimes\win-x64\native"
+          echo "dir=$path" >> $env:GITHUB_OUTPUT
+          Write-Host "nethost dir: $path"
+
+      - name: Generate local.props
+        shell: pwsh
+        run: |
+          $protobufRoot = "${{ github.workspace }}\protobuf-3.21.8"
+          $content = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <Project>
+            <PropertyGroup>
+              <ProtobufIncludeDir>$protobufRoot\src</ProtobufIncludeDir>
+              <ProtobufLibDir>$protobufRoot\build\Release</ProtobufLibDir>
+              <NetHostDir>${{ steps.nethost.outputs.dir }}</NetHostDir>
+            </PropertyGroup>
+          </Project>
+          "@
+          $content | Out-File -FilePath local.props -Encoding utf8
+          Write-Host "Generated local.props:"
+          Get-Content local.props
+
+      - name: Restore NuGet packages
+        run: dotnet restore deadworks.slnx
+
+      - name: Build native (x64 Release)
+        run: msbuild deadworks.slnx /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /m /verbosity:minimal
+
+      - name: Stage artifact
+        shell: pwsh
+        run: |
+          $out = "artifact"
+          New-Item -ItemType Directory -Path "$out/game/bin/win64/managed" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$out/game/citadel/cfg" -Force | Out-Null
+          Copy-Item "x64/Release/deadworks.exe" "$out/game/bin/win64/"
+          Copy-Item "x64/Release/managed/*" "$out/game/bin/win64/managed/" -Recurse -Exclude "plugins"
+          New-Item -ItemType Directory -Path "$out/game/bin/win64/managed/plugins" -Force | Out-Null
+          Set-Content -Path "$out/game/bin/win64/managed/plugins/.gitkeep" -Value ""
+          Copy-Item "config/deadworks_mem.jsonc" "$out/game/citadel/cfg/"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deadworks-x64-release
+          path: artifact/
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deadworks-x64-release
+          path: deadworks-x64-release
+
+      - name: Zip release
+        run: cd deadworks-x64-release && zip -r ../deadworks-${{ github.ref_name }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: deadworks-${{ github.ref_name }}.zip
+          generate_release_notes: true

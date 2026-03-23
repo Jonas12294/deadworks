@@ -221,6 +221,7 @@ public unsafe class CCitadelBaseAbility : CBaseEntity {
 	private static readonly SchemaAccessor<bool> _canBeUpgraded = new(Class, "m_bCanBeUpgraded"u8);
 	private static readonly SchemaAccessor<bool> _toggleState = new(Class, "m_bToggleState"u8);
 	private static readonly SchemaAccessor<float> _cooldownEnd = new(Class, "m_flCooldownEnd"u8);
+	private static readonly SchemaAccessor<float> _cooldownStart = new(Class, "m_flCooldownStart"u8);
 
 	private static int UpgradeBitsOffset => _abilitySlot.Offset - 0x20;
 
@@ -232,8 +233,16 @@ public unsafe class CCitadelBaseAbility : CBaseEntity {
 	public bool IsChanneling => _channeling.Get(Handle);
 	public bool CanBeUpgraded { get => _canBeUpgraded.Get(Handle); set => _canBeUpgraded.Set(Handle, value); }
 	public bool ToggleState => _toggleState.Get(Handle);
-	public float CooldownEnd => _cooldownEnd.Get(Handle);
+	public float CooldownEnd { get => _cooldownEnd.Get(Handle); set => _cooldownEnd.Set(Handle, value); }
+	public float CooldownStart { get => _cooldownStart.Get(Handle); set => _cooldownStart.Set(Handle, value); }
 	public bool IsUnlocked => (UpgradeBits & 1) != 0;
+
+	public bool IsSignature => AbilitySlot >= EAbilitySlot.Signature1 && AbilitySlot <= EAbilitySlot.Signature4;
+	public bool IsActiveItem => AbilitySlot >= EAbilitySlot.ActiveItem1 && AbilitySlot <= EAbilitySlot.ActiveItem4;
+	public bool IsInnate => AbilitySlot >= EAbilitySlot.Innate1 && AbilitySlot <= EAbilitySlot.Innate3;
+	public bool IsWeapon => AbilitySlot >= EAbilitySlot.WeaponSecondary && AbilitySlot <= EAbilitySlot.WeaponMelee;
+	public bool IsItem => (SubclassVData?.Name ?? "").StartsWith("upgrade_");
+	public string AbilityName => SubclassVData?.Name ?? "";
 }
 
 /// <summary>Jump ability entity tracking air jump/wall jump counters for a hero.</summary>
@@ -322,6 +331,9 @@ public sealed unsafe class CCitadelPlayerPawn : CBasePlayerPawn {
 			return new Vector3(p[0], p[1], p[2]);
 		}
 	}
+
+	private static readonly SchemaArrayAccessor<int> _currencies = new("CCitadelPlayerPawn"u8, "m_nCurrencies"u8);
+	public int GetCurrency(ECurrencyType type) => _currencies.Get(Handle, (int)type);
 
 	/// <summary>Adds or removes currency from this pawn (e.g. gold, ability points). Use negative <paramref name="amount"/> to spend.</summary>
 	public void ModifyCurrency(ECurrencyType type, int amount, ECurrencySource source,

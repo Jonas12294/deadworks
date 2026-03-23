@@ -17,5 +17,6 @@
     <Project Path="managed\plugins\RollTheDicePlugin\RollTheDicePlugin.csproj" />
     <Project Path="managed\plugins\ScourgePlugin\ScourgePlugin.csproj" Id="dfbdd4c2-fb11-4069-85b3-2ad1fe5f004f" />
     <Project Path="managed\plugins\SetModelPlugin\SetModelPlugin.csproj" />
+    <Project Path="managed\plugins\AutoRestartPlugin\AutoRestartPlugin.csproj" />
   </Folder>
 </Solution>

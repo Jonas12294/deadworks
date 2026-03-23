@@ -398,7 +398,6 @@ internal static partial class PluginLoader
     public static void DispatchGameFrame(bool simulating, bool firstTick, bool lastTick)
     {
         TimerEngine.OnTick();
-        ScreenText.UpdateAll();
         DispatchToPlugins(p => p.OnGameFrame(simulating, firstTick, lastTick), nameof(IDeadworksPlugin.OnGameFrame));
     }
 

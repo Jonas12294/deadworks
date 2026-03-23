@@ -17,6 +17,8 @@ public sealed class CallbackHandle : IHandle {
 		c?.Invoke();
 	}
 
+	public IHandle CancelOnMapChange() => this;
+
 	internal static readonly CallbackHandle Noop = new(() => { });
 	static CallbackHandle() { Noop._finished = true; }
 }

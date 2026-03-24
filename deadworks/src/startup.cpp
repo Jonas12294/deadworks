@@ -56,10 +56,16 @@ int main(int argc, char **argv) {
     // todo abstract
     deadworks::hooks::g_OnAppSystemLoaded = safetyhook::create_inline(onAppSystemLoaded.value(), deadworks::hooks::Hook_OnAppSystemLoaded);
 
+    constexpr auto DEFAULT_CMD_LINE = "-dedicated -console -dev -insecure -allow_no_lobby_connect +tv_citadel_auto_record 0 +spec_replay_enable 0 +tv_enable 0 +citadel_upload_replay_enabled 0 +hostport 27015 +map dl_midtown"sv;
+
     std::string cmdLine;
-    for (int i = 1; i < argc; i++) {
-        if (i > 1) cmdLine += ' ';
-        cmdLine += argv[i];
+    if (argc > 1) {
+        for (int i = 1; i < argc; i++) {
+            if (i > 1) cmdLine += ' ';
+            cmdLine += argv[i];
+        }
+    } else {
+        cmdLine = DEFAULT_CMD_LINE;
     }
 
     log.Info("handoff to Source2Main. have fun!!");

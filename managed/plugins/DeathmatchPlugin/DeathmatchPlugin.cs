@@ -385,30 +385,6 @@ public class DeathmatchPlugin : DeadworksPluginBase {
 		return HookResult.Continue;
 	}
 
-	[NetMessageHandler]
-	public HookResult OnCurrencyChangedOutgoing(OutgoingMessageContext<CCitadelUserMessage_CurrencyChanged> ctx) {
-		if (ctx.Message.CurrencySource == (int)ECurrencySource.ECheats)
-			return HookResult.Stop;
-		return HookResult.Continue;
-	}
-
-	[NetMessageHandler]
-	public HookResult OnFlexSlotOutgoing(OutgoingMessageContext<CCitadelUserMsg_FlexSlotUnlocked> ctx) {
-		Console.WriteLine($"[DM] Suppressed FlexSlotUnlocked: team={ctx.Message.TeamNumber} slot={ctx.Message.FlexslotUnlocked}");
-		return HookResult.Stop;
-	}
-
-	[NetMessageHandler]
-	public HookResult OnHudAnnouncementOutgoing(OutgoingMessageContext<CCitadelUserMsg_HudGameAnnouncement> ctx) {
-		// Block game-generated announcements (boons etc) but allow our own
-		var title = ctx.Message.TitleLocstring;
-		Console.WriteLine($"[DM] HudAnnouncement: title={title} desc={ctx.Message.DescriptionLocstring}");
-		// Our own announcements contain hero names like "hero_" — let those through
-		if (!string.IsNullOrEmpty(title) && !title.Contains("wins"))
-			return HookResult.Stop;
-		return HookResult.Continue;
-	}
-
 	private bool _rebroadcasting;
 
 	[NetMessageHandler]

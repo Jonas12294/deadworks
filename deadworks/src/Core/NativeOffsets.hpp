@@ -31,9 +31,9 @@ constexpr uintptr_t kOnAbilityRemoved_RemoveSlotCall = 0x8D;
 constexpr uintptr_t kSelectHero_GetManagerCall = 0x15;
 
 // CCitadelGameRules::BuildGameSessionManifest
-constexpr uintptr_t kBGSM_GetHeroTableCall = 0x306;
-constexpr uintptr_t kBGSM_PrecacheGlobalLea = 0x33B;
-constexpr uintptr_t kBGSM_PrecacheCall = 0x342;
+constexpr uintptr_t kBGSM_GetHeroTableCall = 0x2C3;
+constexpr uintptr_t kBGSM_PrecacheGlobalLea = 0x389;
+constexpr uintptr_t kBGSM_PrecacheCall = 0x394;
 
 } // namespace deadworks::offsets
 

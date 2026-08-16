@@ -280,6 +280,47 @@ volatile LONG g_shutdown = 0;           // tells the workers to quit
 volatile LONG64 g_last_netmsg_ms = 0;
 uint64_t g_eject_idle_ms = 30000;       // 0 disables
 
+// Liveness comes from the client's own netchannel, not from message traffic.
+// The earlier design armed on CNETMsg_Tick (4) and timed out on any message,
+// but the client event system only ever delivers user messages to us - a
+// subscription to 4 succeeds and then never fires - so the eject could never
+// arm and the module stayed resident for the life of the game. The netchannel
+// pointer IS the connection: null until connected, null again once it drops.
+volatile LONG g_channel_seen = 0;       // a live channel has been observed at least once
+volatile LONG64 g_channel_lost_ms = 0;  // when it went away (0 while live)
+volatile LONG g_channel_warned = 0;     // "never resolved" said once, not every tick
+uint64_t g_started_ms = 0;              // for that warning's grace period
+uint64_t g_last_eject_file_check = 0;   // the manual-eject file is polled, not stat'd every tick
+std::string g_eject_marker;             // <dll dir>\DELETE-TO-EJECT.eject
+bool g_eject_marker_written = false;    // only watch for its deletion if we wrote it
+
+/// How long the netchannel may stay unresolvable before the module says so.
+constexpr uint64_t kChannelWarnAfterMs = 180000;
+
+/// Where the service -> conn -> netchannel walk last stopped, so a failure can
+/// name the step rather than just "not connected".
+enum class ChannelStage : int { NoSlot = 0, NoService = 1, NoConn = 2, NoChannel = 3, Live = 4 };
+volatile LONG g_channel_stage = 0;
+
+/// Last signon state seen, so transitions are logged once rather than per tick.
+volatile LONG g_signon_state = -1;
+volatile LONG g_signon_bogus_logged = 0;
+
+// Deadlock never really leaves you disconnected: quitting a match drops you
+// into a LOCAL lobby server, which connects again immediately, so "no
+// connection" only ever shows up as a few seconds of loading screen. What
+// actually means "done" is therefore not the absence of a connection but the
+// absence of a DEADWORKS one - so each connection is watched for our own
+// traffic, and one that never carries any is not a server this module has any
+// business staying loaded for.
+void* g_conn_object = nullptr;          // identity of the current connection
+volatile LONG g_deadworks_seen = 0;     // any dw.* message on THIS connection
+uint64_t g_session_ingame_ms = 0;       // when the current connection reached "in game"
+
+/// How long a fully-joined connection may stay silent before the module leaves.
+constexpr uint64_t kNoDeadworksMs = 90000;
+constexpr int kSignonInGame = 6;
+
 void* g_engine = nullptr;
 void* g_filesystem = nullptr;
 
@@ -385,6 +426,11 @@ DWORD g_inject_tid = 0;
 // Defined in the Teardown section; called from the poll probe above it.
 void UnhookAndUnmount();
 void RequestEject(const char* why);
+
+// Defined with the 280 send path below; the poll probe reads it as the
+// connection's liveness signal.
+bool ClientConnected();
+void* GetClientConnection();
 
 // Key input: defined in the input section below, used by the poll probe.
 bool SendClientEvent(const std::string& event_name, const std::string& data);
@@ -1639,6 +1685,11 @@ void __fastcall OnCustomGameEvent(void* self, void* net_message) {
         return;
     }
 
+    // This connection belongs to a Deadworks server. That, not the presence of
+    // a connection, is what keeps the module loaded - see the eject logic.
+    if (InterlockedExchange(&g_deadworks_seen, 1) == 0)
+        Log("[uiwatch] server: Deadworks traffic on this connection - staying loaded");
+
     // Live data for a panel. This handler already runs on the engine thread -
     // the same one the reload poll uses - so the dispatch happens inline; if
     // that ever stopped being true DispatchEvent would drop the event rather
@@ -2093,11 +2144,81 @@ bool __fastcall GetChangedFileProbe(void* watcher, void* out_buffer) {
         return g_original_get_changed ? g_original_get_changed(watcher, out_buffer) : false;
     }
 
-    // Heartbeat stops when the connection does.
-    if (g_eject_idle_ms != 0 && InterlockedCompareExchange(&g_heartbeat_seen, 0, 0) == 1) {
-        const LONG64 last = InterlockedCompareExchange64(&g_last_netmsg_ms, 0, 0);
-        if (last != 0 && GetTickCount64() - static_cast<uint64_t>(last) > g_eject_idle_ms)
-            RequestEject("heartbeat stopped");
+    // The connection itself is the liveness signal: the client's netchannel
+    // exists while connected and is gone the moment it is not. Arming only
+    // after one live sighting keeps a module injected at the main menu from
+    // ejecting before the player has joined anything.
+    if (g_eject_idle_ms != 0) {
+        const uint64_t now = GetTickCount64();
+        if (ClientConnected()) {
+            if (InterlockedExchange(&g_channel_seen, 1) == 0)
+                Log("[uiwatch] netchannel: connection is live; idle-eject armed");
+            InterlockedExchange64(&g_channel_lost_ms, 0);
+
+            // A different connection object means a different server: the last
+            // one's Deadworks traffic says nothing about this one.
+            void* conn = GetClientConnection();
+            if (conn != g_conn_object) {
+                g_conn_object = conn;
+                g_session_ingame_ms = 0;
+                if (InterlockedExchange(&g_deadworks_seen, 0) == 1)
+                    Log("[uiwatch] server: new connection - watching for Deadworks traffic again");
+            }
+
+            // Only judge a connection once it is actually in a game; joining,
+            // loading and hero select are all too early to expect anything.
+            if (InterlockedCompareExchange(&g_signon_state, 0, 0) >= kSignonInGame) {
+                if (g_session_ingame_ms == 0)
+                    g_session_ingame_ms = now;
+                if (InterlockedCompareExchange(&g_deadworks_seen, 0, 0) == 0
+                    && now - g_session_ingame_ms > kNoDeadworksMs) {
+                    RequestEject("no Deadworks traffic on this server");
+                }
+            }
+        } else if (InterlockedCompareExchange(&g_channel_seen, 0, 0) == 1) {
+            const LONG64 lost = InterlockedCompareExchange64(&g_channel_lost_ms, 0, 0);
+            if (lost == 0) {
+                InterlockedExchange64(&g_channel_lost_ms, static_cast<LONG64>(now));
+                // Usually just a loading screen: Deadlock reconnects to its
+                // own lobby within seconds, and the timer is cancelled above.
+                Log("[uiwatch] netchannel: gone - ejecting in %llus unless it comes back",
+                    g_eject_idle_ms / 1000);
+            } else if (now - static_cast<uint64_t>(lost) > g_eject_idle_ms) {
+                RequestEject("disconnected");
+            }
+        } else if (InterlockedCompareExchange(&g_channel_warned, 0, 0) == 0
+                   && g_started_ms != 0 && now - g_started_ms > kChannelWarnAfterMs) {
+            // Never resolved after minutes of polling: almost always the client
+            // service RVA drifting after a game patch. Say so once - silence
+            // here is what made the last no-eject take a log dig to explain.
+            InterlockedExchange(&g_channel_warned, 1);
+            static const char* kStageNames[] = {
+                "the service slot was never found (name-anchored search failed too)",
+                "the service pointer is null",
+                "the connection object is null (never joined a game?)",
+                "the connection has no netchannel",
+                "live",
+            };
+            const LONG stage = InterlockedCompareExchange(&g_channel_stage, 0, 0);
+            Log("[uiwatch] netchannel: never resolved after %llus - %s. Idle-eject cannot arm; "
+                "delete '%s' to unload by hand.",
+                kChannelWarnAfterMs / 1000,
+                kStageNames[(stage >= 0 && stage <= 4) ? stage : 0],
+                g_eject_marker.c_str());
+        }
+    }
+
+    // Manual eject. The module writes DELETE-TO-EJECT.eject at startup and
+    // watches for it to GO AWAY - deleting a file that is already sitting
+    // there is easier to explain (and harder to get wrong) than creating one
+    // with an exact name, which Explorer likes to save as .eject.txt. Only
+    // armed if the marker was actually written, so a folder we cannot write to
+    // never reads as "deleted".
+    if (g_eject_marker_written
+        && (g_last_eject_file_check == 0 || GetTickCount64() - g_last_eject_file_check > 1000)) {
+        g_last_eject_file_check = GetTickCount64();
+        if (GetFileAttributesA(g_eject_marker.c_str()) == INVALID_FILE_ATTRIBUTES)
+            RequestEject("marker deleted");
     }
 
     // The event system is driven from this thread; register here, not on the
@@ -2189,6 +2310,17 @@ bool __fastcall GetChangedFileProbe(void* watcher, void* out_buffer) {
 constexpr uintptr_t kClientServiceRva = 0x3989858;
 constexpr size_t kServiceConnOffset = 0xA0;      // CNetworkGameClient*
 constexpr size_t kConnNetChanOffset = 0xF0;      // INetChannel*
+
+// Signon state on CNetworkGameClient, which is what the engine itself tests
+// for "connected" - read out of its own vtable accessors in engine2.dll:
+//   vtable[14]  cmp [rcx+230h], 6 ; setnl al    -> IsInGame     (>= 6)
+//   vtable[15]  cmp [rcx+230h], 2 ; setnl al    -> IsConnected  (>= 2)
+// The pointers alone are useless for liveness: the engine keeps the connection
+// object (and a stale channel pointer) after a disconnect, which is why the
+// first netchannel-based build armed in a match and then never saw it end.
+constexpr size_t kConnSignonOffset = 0x230;
+constexpr int kSignonConnected = 2;
+constexpr int kSignonMax = 8;                    // range check: a sane state is 0..8
 constexpr size_t kSendNetMessageIndex = 39;      // netchannel vtable +0x138
 constexpr size_t kAllocateMessageIndex = 6;      // CProtobufBinding vtable
 constexpr size_t kNetMessageAsMessageIndex = 2;  // CNetMessage vtable
@@ -2200,17 +2332,196 @@ using AsMessageFn = void*(__fastcall*)(void*);
 using SendNetMessageFn = void*(__fastcall*)(void*, void*, int);
 using NetMessageDtorFn = void(__fastcall*)(void*, unsigned int);
 
+// --- resolving the client service ------------------------------------------
+//
+// kClientServiceRva is where client.dll caches the resolved
+// INetworkClientService pointer, and it moves with every game patch - it has
+// already moved once (0x3987658 -> 0x3989858), and a stale one silently reads
+// as "never connected", which is what stopped the module ejecting. So the RVA
+// is only a first guess now: if it does not validate, the slot is found by
+// anchoring on the interface's own name string, which does not move with the
+// build.
+
+void** g_client_service_slot = nullptr;
+
+uint8_t* ModuleBounds(const wchar_t* name, size_t* size) {
+    HMODULE module = GetModuleHandleW(name);
+    if (!module) return nullptr;
+    auto* base = reinterpret_cast<uint8_t*>(module);
+    auto* dos = reinterpret_cast<IMAGE_DOS_HEADER*>(base);
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE) return nullptr;
+    auto* nt = reinterpret_cast<IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+    if (nt->Signature != IMAGE_NT_SIGNATURE) return nullptr;
+    if (size) *size = nt->OptionalHeader.SizeOfImage;
+    return base;
+}
+
+bool PointsInto(const uint8_t* base, size_t size, const void* p) {
+    if (!base || !p) return false;
+    const auto v = reinterpret_cast<uintptr_t>(p);
+    const auto b = reinterpret_cast<uintptr_t>(base);
+    return v >= b && v < b + size;
+}
+
+/// The service is engine2-defined and client.dll only caches the pointer, so a
+/// candidate whose vtable lives in engine2 is the real thing. Cheap, and it
+/// rejects whatever unrelated data a stale offset happens to point at.
+bool LooksLikeEngineObject(void* candidate) {
+    size_t engine_size = 0;
+    uint8_t* engine = ModuleBounds(L"engine2.dll", &engine_size);
+    if (!engine || !candidate) return false;
+    void* vtable = nullptr;
+    __try {
+        vtable = *reinterpret_cast<void**>(candidate);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    return PointsInto(engine, engine_size, vtable);
+}
+
+const uint8_t* FindBytes(const uint8_t* begin, size_t size, const void* needle, size_t needle_size) {
+    if (size < needle_size) return nullptr;
+    for (size_t i = 0; i + needle_size <= size; ++i)
+        if (memcmp(begin + i, needle, needle_size) == 0)
+            return begin + i;
+    return nullptr;
+}
+
+/// Finds the global client.dll keeps the service pointer in: locate the
+/// interface name string, then the import descriptor that references it. The
+/// descriptor holds either the slot address or the instance itself, depending
+/// on the build, so both shapes are accepted - and only if the result passes
+/// the engine2 vtable check.
+void** FindClientServiceSlot() {
+    size_t client_size = 0;
+    uint8_t* client = ModuleBounds(L"client.dll", &client_size);
+    if (!client) return nullptr;
+
+    // The known offset first: right until a patch moves it, and free to check.
+    if (kClientServiceRva + sizeof(void*) < client_size) {
+        auto** slot = reinterpret_cast<void**>(client + kClientServiceRva);
+        if (LooksLikeEngineObject(*slot)) {
+            Log("[uiwatch] netchannel: service slot at the known rva +0x%llX", (unsigned long long)kClientServiceRva);
+            return slot;
+        }
+    }
+
+    static const char kServiceName[] = "NetworkClientService_001";
+    uint8_t* rdata = nullptr;
+    size_t rdata_size = 0;
+    if (!GetSection(reinterpret_cast<HMODULE>(client), ".rdata", &rdata, &rdata_size))
+        return nullptr;
+
+    const uint8_t* name = FindBytes(rdata, rdata_size, kServiceName, sizeof(kServiceName));
+    if (!name) {
+        Log("[uiwatch] netchannel: '%s' is not in client.dll .rdata", kServiceName);
+        return nullptr;
+    }
+
+    // A pointer to that string, then the slot/instance a few qwords behind it.
+    const char* sections[] = {".rdata", ".data"};
+    for (const char* section : sections) {
+        uint8_t* begin = nullptr;
+        size_t size = 0;
+        if (!GetSection(reinterpret_cast<HMODULE>(client), section, &begin, &size))
+            continue;
+
+        for (size_t off = 0; off + sizeof(void*) <= size; off += sizeof(void*)) {
+            auto** entry = reinterpret_cast<void**>(begin + off);
+            if (*entry != name) continue;
+
+            for (int step = 1; step <= 6 && off + (step + 1) * sizeof(void*) <= size; ++step) {
+                void* value = entry[step];
+                if (PointsInto(client, client_size, value)) {
+                    auto** slot = reinterpret_cast<void**>(value);
+                    if (LooksLikeEngineObject(*slot)) {
+                        Log("[uiwatch] netchannel: service slot found by name in %s at +0x%llX",
+                            section, (unsigned long long)(reinterpret_cast<uint8_t*>(slot) - client));
+                        return slot;
+                    }
+                } else if (LooksLikeEngineObject(value)) {
+                    Log("[uiwatch] netchannel: service instance found by name in %s at +0x%llX",
+                        section, (unsigned long long)(reinterpret_cast<uint8_t*>(entry + step) - client));
+                    return entry + step;
+                }
+            }
+        }
+    }
+
+    Log("[uiwatch] netchannel: found the interface name but no usable descriptor");
+    return nullptr;
+}
+
+/// The connection object the service holds, or null. Its signon state is the
+/// liveness signal; its netchannel is what messages are sent on.
+void* GetClientConnection() {
+    if (!g_client_service_slot) {
+        g_client_service_slot = FindClientServiceSlot();
+        if (!g_client_service_slot) {
+            InterlockedExchange(&g_channel_stage, static_cast<LONG>(ChannelStage::NoSlot));
+            return nullptr;
+        }
+    }
+
+    void* service = *g_client_service_slot;
+    if (!service) {
+        InterlockedExchange(&g_channel_stage, static_cast<LONG>(ChannelStage::NoService));
+        return nullptr;
+    }
+
+    void* conn = *reinterpret_cast<void**>(
+        reinterpret_cast<uint8_t*>(service) + kServiceConnOffset);
+    if (!conn)
+        InterlockedExchange(&g_channel_stage, static_cast<LONG>(ChannelStage::NoConn));
+    return conn;
+}
+
 // Walks the service -> conn -> netchannel chain. Null until connected.
 void* GetClientNetChannel() {
-    HMODULE client = GetModuleHandleW(L"client.dll");
-    if (!client) return nullptr;
-    auto* service = *reinterpret_cast<void**>(
-        reinterpret_cast<uint8_t*>(client) + kClientServiceRva);
-    if (!service) return nullptr;
-    auto* conn = *reinterpret_cast<void**>(
-        reinterpret_cast<uint8_t*>(service) + kServiceConnOffset);
-    if (!conn) return nullptr;
-    return *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(conn) + kConnNetChanOffset);
+    void* conn = GetClientConnection();
+    if (!conn)
+        return nullptr;
+
+    void* netchan = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(conn) + kConnNetChanOffset);
+    InterlockedExchange(&g_channel_stage, static_cast<LONG>(
+        netchan ? ChannelStage::Live : ChannelStage::NoChannel));
+    return netchan;
+}
+
+// Whether the client currently has a netchannel, i.e. is in a game. Polled
+// several times a second from the reload probe, so it is wrapped in SEH: the
+// service offset is a hardcoded RVA that drifts across game patches, and a
+// stale one would otherwise turn a liveness check into an access violation.
+// A drifted offset reads as "not connected", which never arms the eject -
+// exactly the fail-safe direction.
+bool ClientConnected() {
+    __try {
+        void* conn = GetClientConnection();
+        if (!conn)
+            return false;
+
+        // The engine's own test. Range-checked, so a moved field reads as
+        // "unknown" and falls back to the old pointer check rather than
+        // ejecting on garbage.
+        const int signon = *reinterpret_cast<const int*>(
+            reinterpret_cast<const uint8_t*>(conn) + kConnSignonOffset);
+        if (signon >= 0 && signon <= kSignonMax) {
+            if (signon != InterlockedExchange(&g_signon_state, signon))
+                Log("[uiwatch] netchannel: signon state %d%s", signon,
+                    signon >= kSignonConnected ? " (connected)" : " (not connected)");
+            return signon >= kSignonConnected;
+        }
+
+        if (InterlockedExchange(&g_signon_bogus_logged, 1) == 0)
+            Log("[uiwatch] netchannel: signon field at +0x%llX reads %d - out of range, "
+                "falling back to the netchannel pointer (offset moved?)",
+                (unsigned long long)kConnSignonOffset, signon);
+        return GetClientNetChannel() != nullptr;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
 }
 
 // Sends one custom game event to the server. Engine thread only.
@@ -2541,9 +2852,34 @@ void FlushInputReports() {
 // Teardown
 // ---------------------------------------------------------------------------
 
+// Panels the host bundle built at runtime do NOT live under the layout it
+// replaced: the runtime hoists its overlay into HudCore for z-order, so it is a
+// child of the HUD root, not of hud_health. Unmounting and evicting the layout
+// therefore reloads a panel that never owned those panels, and the pushed UI
+// stays on screen with nothing left to update it. Deleting the overlay is the
+// only thing that takes it away - and it has to happen while a panel context
+// still exists, i.e. before the unmount.
+constexpr char kTeardownJs[] =
+    "(function(){try{"
+    "var p=$.GetContextPanel();if(!p)return;"
+    "var top=p;while(top.GetParent&&top.GetParent())top=top.GetParent();"
+    "var names=['DwHostOverlay','DwOverlayHost'];"
+    "for(var i=0;i<names.length;i++){"
+    "var n=top.FindChildTraverse&&top.FindChildTraverse(names[i]);"
+    "if(n&&n.DeleteAsync)n.DeleteAsync(0);}"
+    "}catch(e){}})();";
+
 // Engine thread only. Unmount first, then undo the hooks - that way the
 // filesystem is left clean even if something below goes wrong.
 void UnhookAndUnmount() {
+    // Before anything else, while the panel and its V8 context are still
+    // alive: take down the server-built UI. After the unmount there is no
+    // script left to do it, and after the hooks are gone we cannot run any.
+    if (InterlockedCompareExchange(&g_ui_event_stage, 0, 0) == 1) {
+        RunServerJs(kTeardownJs);
+        Log("[uiwatch] eject: asked the panel to remove the server-built UI");
+    }
+
     RemoveInputHook();   // release the window hook before anything else
     if (g_bundle_mounted) {
         UnmountVpk(g_bundle_vpk);
@@ -2618,6 +2954,9 @@ DWORD WINAPI EjectWatchdog(LPVOID) {
     if (g_work_event) SetEvent(g_work_event);
     if (g_bundle_event) SetEvent(g_bundle_event);
     Sleep(300);
+
+    // Leave the folder as we found it; the next injection writes it again.
+    if (!g_eject_marker.empty()) DeleteFileA(g_eject_marker.c_str());
 
     Log("[uiwatch] eject: unloading");
     FreeLibraryAndExitThread(g_self, 0);
@@ -2702,6 +3041,23 @@ bool LoadConfig() {
     char* slash = strrchr(ini, '\\');
     if (!slash) return false;
     strcpy_s(slash + 1, MAX_PATH - (slash + 1 - ini), "uiwatch.ini");
+
+    // The manual-eject marker lives beside the ini, whether or not there is one.
+    g_eject_marker.assign(ini, slash + 1 - ini);
+    g_eject_marker += "DELETE-TO-EJECT.eject";
+    g_started_ms = GetTickCount64();
+
+    FILE* marker = nullptr;
+    if (fopen_s(&marker, g_eject_marker.c_str(), "w") == 0 && marker) {
+        fputs("Delete this file to unload the Deadworks UI module from the running game.\r\n"
+              "It is recreated the next time the module is injected.\r\n", marker);
+        fclose(marker);
+        g_eject_marker_written = true;
+        Log("[uiwatch] eject: delete '%s' to unload", g_eject_marker.c_str());
+    } else {
+        Log("[uiwatch] eject: could not write '%s' - manual eject unavailable",
+            g_eject_marker.c_str());
+    }
 
     const bool have_ini = GetFileAttributesA(ini) != INVALID_FILE_ATTRIBUTES;
     if (!have_ini)

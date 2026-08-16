@@ -38,8 +38,15 @@ from.
 `uiwatch.dll` in this folder is the build that manifest points at:
 
 ```
-sha256  a5a131f9d1532363658e2f9936719da69750e63d2820908d7a195f0e69131700
+sha256  8663e8d94fd1ef929b5040f3b5f2727c8876bfa25792ba25817849a828f19cc6
 ```
+
+It unloads itself rather than waiting to be told to: it watches the client's
+own signon state, and a connection that never carries any Deadworks traffic —
+including the local lobby server Deadlock drops you into when you leave a match
+— is not one it stays loaded for. Undoing its hooks has to happen on the engine
+thread, so it does that itself and calls `FreeLibraryAndExitThread`; the
+launcher only deletes the file afterwards.
 
 ## Building
 

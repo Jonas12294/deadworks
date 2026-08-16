@@ -24,6 +24,10 @@ internal static class ConfigManager
 
 		ConfigResolver.ReloadConfig = ReloadConfig;
 		ConfigResolver.GetConfigPath = GetConfigPath;
+		// Plugin data (UI folders, saved state) lives in a folder named after
+		// the plugin, next to its DLL - managed\plugins\<Name>\ - which is
+		// where plugin authors expect to ship files.
+		ConfigResolver.GetDataDirectory = plugin => Path.Combine(managedDir!, "plugins", plugin.Name);
 	}
 
 	public static void LoadConfig(IDeadworksPlugin plugin)

@@ -11,6 +11,7 @@
 #include "Hooks/CBaseEntity.hpp"
 #include "Hooks/GameEvents.hpp"
 #include "Hooks/PostEventAbstract.hpp"
+#include "Hooks/ClientMessages.hpp"
 #include "Hooks/CCitadelPlayerPawn.hpp"
 #include "Hooks/BuildGameSessionManifest.hpp"
 #include "Hooks/CCitadelPlayerController.hpp"
@@ -206,6 +207,10 @@ void Deadworks::PostInit() {
 
     hooks::g_GameEventSystemVmt = safetyhook::create_vmt(g_pGameEventSystem);
     hooks::g_PostEventAbstract = safetyhook::create_vm(hooks::g_GameEventSystemVmt, mem.GetVirtual("IGameEventSystem::PostEventAbstract").value(), &hooks::Hook_PostEventAbstract);
+
+    // Incoming client->server custom game events (280) are subscribed from the
+    // StartupServer hook, not here: the engine's network-message registry is
+    // not populated yet at this point (FindNetworkMessageById returns null).
 
     {
         int idx = mem.GetVirtual("ISource2GameEntities::CheckTransmit").value();
@@ -586,6 +591,11 @@ void Deadworks::OnEntityFireOutputPost(const char *callerClass, const char *outp
 void Deadworks::OnPre_ProcessUsercmds(int playerSlot, const uint8_t *batchBytes, int batchLen, int numCmds, bool paused, float margin, uint8_t *outBytes, int *outLen) {
     if (m_managed.onProcessUsercmds)
         m_managed.onProcessUsercmds(playerSlot, batchBytes, batchLen, numCmds, paused ? 1 : 0, margin, outBytes, outLen);
+}
+
+void Deadworks::OnClientCustomGameEvent(int playerSlot, const char *eventName, const uint8_t *data, int dataLen) {
+    if (m_managed.onClientCustomGameEvent)
+        m_managed.onClientCustomGameEvent(playerSlot, eventName ? eventName : "", data, dataLen);
 }
 
 uint64_t Deadworks::OnPre_AbilityThink(int playerSlot, void *pawnEntity, uint64_t heldButtons, uint64_t changedButtons, uint64_t scrollButtons, uint64_t *outForcedButtons) {

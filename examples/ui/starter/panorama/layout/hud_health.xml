@@ -1,0 +1,78 @@
+<!-- Deadworks starter panel - the smallest thing that exercises the whole
+     server-pushed UI system. Base layout reconstructed from stock
+     hud_health.vxml_c by Source 2 Viewer; the DwStarter block and the two
+     script includes are the additions. hud_health is the proven reload
+     target, which is why custom UI lives inside it (server-built panels
+     don't exist yet).
+
+     To make this yours: rename the ids/labels inside #DwStarter, edit
+     dwstart1.js, and remember the one hard rule - a changed SCRIPT needs a
+     new filename (dwstart2.js, ...) and an updated include below, because
+     the engine never reloads a compiled script under an old name. -->
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/citadel_base_styles.vcss_c" />
+		<include src="s2r://panorama/styles/hud_common.vcss_c" />
+		<include src="s2r://panorama/styles/hud_health.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/scripts/dwcore3.vjs_c" />
+		<include src="s2r://panorama/scripts/dwstart1.vjs_c" />
+	</scripts>
+	<Panel class="bars_container" hittest="false">
+		<!-- The starter block. The strip is the state signal a screenshot
+		     can't miss: magenta = script never ran, red = helper include
+		     failed, orange = waiting for the server, cyan = live. -->
+		<Panel id="DwStarter" hittest="true" hittestchildren="true"
+		       style="flow-children: down; width: 320px; background-color: #101018cc; border: 2px solid #00ffff66; padding: 8px; margin-bottom: 10px;">
+			<Panel style="flow-children: right;">
+				<Panel id="dw_status_strip" style="width: 14px; height: 14px; background-color: #ff00ff; margin-right: 6px;" />
+				<Label text="DEADWORKS STARTER" style="font-size: 15px; font-weight: bold; color: #00ffff; margin-right: 10px; overflow: noclip;" />
+				<Label id="dw_status" text="script did not run" style="font-size: 14px; color: #aaaaaa; overflow: noclip;" />
+			</Panel>
+			<Panel style="flow-children: down; margin-top: 6px;">
+				<Label id="dw_message" text="" style="font-size: 14px; color: #dddddd; overflow: noclip;" />
+				<Label id="dw_clock" text="" style="font-size: 13px; color: #88ff88; overflow: noclip;" />
+			</Panel>
+			<Panel style="flow-children: right; margin-top: 6px;">
+				<Button id="dw_ping" onactivate="DwStart.ping()"
+				        style="background-color: #003344; border: 1px solid #00ffff88; padding: 2px 10px;">
+					<Label text="PING SERVER" style="font-size: 13px; color: #00ffff; overflow: noclip;" />
+				</Button>
+			</Panel>
+		</Panel>
+		<Panel class="health_bar_line">
+			<Panel class="health_bar_border">
+				<ProgressBarWithMiddle id="health_bar" class="large_progress_bar" vertical="true">
+					<Panel class="progress_bar_numbers">
+						<Panel class="bar_num_col_right">
+							<Label id="current_health" class="progress_bar_current" text="{i:health}" />
+							<Label id="max_health" text="/{i:maxHealth}" />
+						</Panel>
+					</Panel>
+				</ProgressBarWithMiddle>
+				<ProgressBarWithMiddle id="pending_incoming_damage" class="large_progress_bar" vertical="true" />
+				<ProgressBarWithMiddle id="pending_incoming_heal" class="large_progress_bar" vertical="true" />
+				<Panel id="healthBottomEdge" />
+				<Panel id="health_bar_frame" />
+			</Panel>
+			<Panel class="regen_container">
+				<Image class="regen_image" src="s2r://panorama/images/hud/healthbar/icon_regen_arrows.vsvg" />
+				<Label class="regen_value" text="{s:HealthRegen}" />
+			</Panel>
+			<Panel id="RejuvenatorContainer" />
+		</Panel>
+		<ProgressBarWithMiddle id="tech_shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:techShieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:techShieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+		<ProgressBarWithMiddle id="shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:shieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:shieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+	</Panel>
+</root>

@@ -1,0 +1,19 @@
+<!-- A second, deliberately different UI, to show the server switching between
+     UIs. Load it with `ui hello` (or the Dashboard's "Hello UI →" button);
+     the "← Dashboard" button here loads the other one. -->
+<panel id="hello" class="card">
+    <label class="big">HELLO UI</label>
+    <label class="sub">a second UI in uis\hello\ - the server can load any of them by name</label>
+
+    <panel class="row">
+        <button id="dashboard" class="nav" onclick="ui.load">← Dashboard</button>
+    </panel>
+
+    <label class="section">quick actions</label>
+    <panel class="row">
+        <button id="gold" class="act" onclick="act.do">+1000 Gold</button>
+        <button id="launch" class="act" onclick="act.do">Launch</button>
+    </panel>
+
+    <label id="status" class="status">edit uis\hello\ui.* and save - live</label>
+</panel>

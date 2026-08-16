@@ -2,6 +2,8 @@ mod addons;
 mod connect;
 mod deep_link;
 mod gameinfo;
+#[cfg(windows)]
+mod inject;
 mod ping;
 mod telemetry;
 

@@ -1,0 +1,188 @@
+<!-- Deadworks interactive scoreboard demo.
+     Base layout reconstructed from stock hud_health.vxml_c by Source 2 Viewer;
+     the DwScoreboard block and the two script includes are the additions.
+     hud_health is the proven reload target, which is why the scoreboard lives
+     here rather than in a layout of its own (server-built panels don't exist
+     yet). Script filenames carry a revision number - see dwscore4.js. -->
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/citadel_base_styles.vcss_c" />
+		<include src="s2r://panorama/styles/hud_common.vcss_c" />
+		<include src="s2r://panorama/styles/hud_health.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/scripts/dwcore3.vjs_c" />
+		<include src="s2r://panorama/scripts/dwscore4.vjs_c" />
+	</scripts>
+	<Panel class="bars_container" hittest="false">
+		<!-- Deadworks live scoreboard. Fed by CustomUiPlugin via UI.Emit; the
+		     header buttons and the ping button send actions back through
+		     Deadworks.SendToServer. The strip is the state signal a screenshot
+		     can't miss: orange = script loaded and waiting, cyan = server data
+		     arrived, red = the helper include failed. -->
+		<Panel id="DwScoreboard" hittest="true" hittestchildren="true"
+		       style="flow-children: down; width: 470px; background-color: #101018e0; border: 2px solid #00ffff66; padding: 10px; horizontal-align: right; vertical-align: top; margin-top: 340px; margin-right: 20px;">
+			<Panel style="flow-children: right;">
+				<Panel id="dw_status_strip" style="width: 14px; height: 14px; background-color: #ff00ff; margin-right: 6px;" />
+				<Label text="DEADWORKS LIVE" style="font-size: 15px; font-weight: bold; color: #00ffff; margin-right: 10px; overflow: noclip;" />
+				<Label id="dw_status" text="script did not run" style="font-size: 14px; color: #aaaaaa; overflow: noclip;" />
+			</Panel>
+			<Panel style="flow-children: right; margin-top: 4px;">
+				<Label id="dw_pong" text="" style="font-size: 13px; color: #88ff88; overflow: noclip;" />
+			</Panel>
+			<Panel style="flow-children: right; margin-top: 6px;">
+				<Label text="Player" style="width: 190px; font-size: 13px; color: #888888;" />
+				<Button onactivate="DwScore.sort('kills')" style="width: 44px;">
+					<Label id="dw_sort_kills" text="K" style="font-size: 13px; color: #00ffff; text-align: right; overflow: noclip;" />
+				</Button>
+				<Button onactivate="DwScore.sort('deaths')" style="width: 44px;">
+					<Label id="dw_sort_deaths" text="D" style="font-size: 13px; color: #888888; text-align: right; overflow: noclip;" />
+				</Button>
+				<Button onactivate="DwScore.sort('assists')" style="width: 44px;">
+					<Label id="dw_sort_assists" text="A" style="font-size: 13px; color: #888888; text-align: right; overflow: noclip;" />
+				</Button>
+				<Button onactivate="DwScore.sort('networth')" style="width: 76px;">
+					<Label id="dw_sort_networth" text="NW" style="font-size: 13px; color: #888888; text-align: right; overflow: noclip;" />
+				</Button>
+				<Button onactivate="DwScore.sort('level')" style="width: 46px;">
+					<Label id="dw_sort_level" text="LVL" style="font-size: 13px; color: #888888; text-align: right; overflow: noclip;" />
+				</Button>
+			</Panel>
+			<Panel id="dw_row0" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r0_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r0_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r0_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r0_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r0_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r0_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row1" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r1_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r1_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r1_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r1_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r1_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r1_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row2" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r2_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r2_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r2_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r2_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r2_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r2_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row3" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r3_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r3_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r3_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r3_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r3_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r3_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row4" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r4_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r4_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r4_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r4_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r4_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r4_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row5" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r5_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r5_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r5_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r5_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r5_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r5_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row6" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r6_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r6_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r6_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r6_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r6_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r6_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row7" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r7_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r7_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r7_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r7_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r7_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r7_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row8" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r8_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r8_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r8_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r8_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r8_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r8_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row9" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r9_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r9_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r9_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r9_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r9_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r9_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row10" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r10_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r10_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r10_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r10_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r10_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r10_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel id="dw_row11" visible="false" style="flow-children: right; margin-top: 2px;">
+				<Label id="dw_r11_name" text="" style="width: 190px; font-size: 14px; color: #cccccc; overflow: noclip;" />
+				<Label id="dw_r11_k" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r11_d" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r11_a" text="" style="width: 44px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r11_nw" text="" style="width: 76px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+				<Label id="dw_r11_lvl" text="" style="width: 46px; font-size: 14px; color: #dddddd; text-align: right; overflow: noclip;" />
+			</Panel>
+			<Panel style="flow-children: right; margin-top: 6px;">
+				<Button id="dw_ping" onactivate="DwScore.ping()"
+				        style="background-color: #003344; border: 1px solid #00ffff88; padding: 2px 10px;">
+					<Label text="PING SERVER" style="font-size: 13px; color: #00ffff; overflow: noclip;" />
+				</Button>
+			</Panel>
+		</Panel>
+		<Panel class="health_bar_line">
+			<Panel class="health_bar_border">
+				<ProgressBarWithMiddle id="health_bar" class="large_progress_bar" vertical="true">
+					<Panel class="progress_bar_numbers">
+						<Panel class="bar_num_col_right">
+							<Label id="current_health" class="progress_bar_current" text="{i:health}" />
+							<Label id="max_health" text="/{i:maxHealth}" />
+						</Panel>
+					</Panel>
+				</ProgressBarWithMiddle>
+				<ProgressBarWithMiddle id="pending_incoming_damage" class="large_progress_bar" vertical="true" />
+				<ProgressBarWithMiddle id="pending_incoming_heal" class="large_progress_bar" vertical="true" />
+				<Panel id="healthBottomEdge" />
+				<Panel id="health_bar_frame" />
+			</Panel>
+			<Panel class="regen_container">
+				<Image class="regen_image" src="s2r://panorama/images/hud/healthbar/icon_regen_arrows.vsvg" />
+				<Label class="regen_value" text="{s:HealthRegen}" />
+			</Panel>
+			<Panel id="RejuvenatorContainer" />
+		</Panel>
+		<ProgressBarWithMiddle id="tech_shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:techShieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:techShieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+		<ProgressBarWithMiddle id="shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:shieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:shieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+	</Panel>
+</root>

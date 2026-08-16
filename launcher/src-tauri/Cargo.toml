@@ -25,7 +25,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 open = "5"
 tauri-plugin-store = "2.4.2"
-reqwest = { version = "0.12", features = ["stream", "json"] }
+reqwest = { version = "0.12", features = ["stream", "json", "blocking"] }
+sha2 = "0.10"
 tokio = { version = "1", features = ["fs", "io-util"] }
 futures-util = "0.3"
 bzip2 = "0.5"
@@ -33,6 +34,14 @@ uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+] }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-autostart = "2.5.1"

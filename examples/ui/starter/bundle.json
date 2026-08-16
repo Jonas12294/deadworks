@@ -1,0 +1,6 @@
+{
+    "name": "dwstarter",
+    "copy": [
+        { "from": "../deadworks.js", "to": "panorama/scripts/dwcore3.js" }
+    ]
+}

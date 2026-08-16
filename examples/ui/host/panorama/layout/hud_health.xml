@@ -1,0 +1,69 @@
+<!-- Deadworks server-built UI host - compiled ONCE, reused by every mod.
+     Base layout reconstructed from stock hud_health.vxml_c by Source 2 Viewer;
+     the DwHost block and the two script includes are the additions.
+     hud_health is the proven reload target: it only LOADS the runtime, which
+     then hoists #DwHost out to the HUD root as a full-screen overlay and
+     builds whatever tree the server describes (UiApp.SetTree). Servers never
+     need this file - they push trees over the data channel.
+
+     DwHost starts 1px so it cannot disturb the health cluster's layout before
+     the hoist; the runtime grows it to 100% once it is safely reparented. -->
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/citadel_base_styles.vcss_c" />
+		<include src="s2r://panorama/styles/hud_common.vcss_c" />
+		<include src="s2r://panorama/styles/hud_health.vcss_c" />
+	</styles>
+	<scripts>
+		<include src="s2r://panorama/scripts/dwcore5.vjs_c" />
+		<include src="s2r://panorama/scripts/dwhost5.vjs_c" />
+	</scripts>
+	<Panel class="bars_container" hittest="false">
+		<!-- The host overlay. The badge is the state signal: magenta = script
+		     never ran, red = helper missing, orange = waiting for a tree,
+		     cyan = tree built. -->
+		<Panel id="DwHost" hittest="false" hittestchildren="true"
+		       style="width: 1px; height: 1px; overflow: noclip;">
+			<Panel id="dw_host_badge" hittest="false"
+			       style="flow-children: right; background-color: #10101899; padding: 2px 6px; overflow: noclip;">
+				<Panel id="dw_status_strip" style="width: 10px; height: 10px; background-color: #ff00ff; margin-right: 4px; vertical-align: center;" />
+				<Label id="dw_status" text="script did not run" style="font-size: 11px; color: #aaaaaa; overflow: noclip;" />
+			</Panel>
+			<Panel id="DwHostRoot" hittest="false" hittestchildren="true"
+			       style="width: 100%; height: 100%; overflow: noclip;" />
+		</Panel>
+		<Panel class="health_bar_line">
+			<Panel class="health_bar_border">
+				<ProgressBarWithMiddle id="health_bar" class="large_progress_bar" vertical="true">
+					<Panel class="progress_bar_numbers">
+						<Panel class="bar_num_col_right">
+							<Label id="current_health" class="progress_bar_current" text="{i:health}" />
+							<Label id="max_health" text="/{i:maxHealth}" />
+						</Panel>
+					</Panel>
+				</ProgressBarWithMiddle>
+				<ProgressBarWithMiddle id="pending_incoming_damage" class="large_progress_bar" vertical="true" />
+				<ProgressBarWithMiddle id="pending_incoming_heal" class="large_progress_bar" vertical="true" />
+				<Panel id="healthBottomEdge" />
+				<Panel id="health_bar_frame" />
+			</Panel>
+			<Panel class="regen_container">
+				<Image class="regen_image" src="s2r://panorama/images/hud/healthbar/icon_regen_arrows.vsvg" />
+				<Label class="regen_value" text="{s:HealthRegen}" />
+			</Panel>
+			<Panel id="RejuvenatorContainer" />
+		</Panel>
+		<ProgressBarWithMiddle id="tech_shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:techShieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:techShieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+		<ProgressBarWithMiddle id="shield_bar" class="small_progress_bar" vertical="true">
+			<Panel class="progress_bar_numbers">
+				<Label class="progress_bar_current" text="{i:shieldHealth}" />
+				<Label class="progress_bar_max" text="/{i:shieldMaxHealth}" />
+			</Panel>
+		</ProgressBarWithMiddle>
+	</Panel>
+</root>

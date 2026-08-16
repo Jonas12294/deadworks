@@ -196,6 +196,12 @@ public static class EntryPoint
     public static void OnClientFullConnect(int slot)
     {
         Players.SetConnected(slot, true);
+        // UI apps first, so bundles are already on their way when plugin
+        // handlers run (they no longer need to forward anything themselves).
+        UiAppRegistry.HandleConnect(slot);
+        // Key bindings likewise: a joiner needs the current policy table before
+        // they can press anything.
+        Input.HandleConnect(slot);
         var args = new ClientFullConnectEvent { Slot = slot };
         PluginLoader.DispatchClientFullConnect(args);
     }
@@ -205,6 +211,10 @@ public static class EntryPoint
     {
         var args = new ClientDisconnectedEvent { Slot = slot, Reason = reason };
         PluginLoader.DispatchClientDisconnect(args);
+        UiAppRegistry.HandleDisconnect(slot);
+        // Per-player key policy overrides must not outlive the player they were
+        // aimed at - the slot gets reused.
+        Input.HandleDisconnect(slot);
         Players.SetConnected(slot, false);
     }
 
@@ -347,6 +357,30 @@ public static class EntryPoint
 
         *outForcedButtons = (ulong)args.ForcedButtons;
         return (ulong)args.BlockedButtons;
+    }
+
+    /// <summary>
+    /// A client→server custom game event (message 280). The slot comes from the
+    /// connection it arrived on, so it is authenticated; everything else is
+    /// client-supplied and each handler validates its own payload.
+    /// </summary>
+    [UnmanagedCallersOnly]
+    public static unsafe void OnClientCustomGameEvent(int playerSlot, sbyte* eventName, byte* data, int dataLen)
+    {
+        try
+        {
+            string name = eventName != null ? new string(eventName) : "";
+            var payload = data != null && dataLen > 0
+                ? new ReadOnlySpan<byte>(data, dataLen)
+                : ReadOnlySpan<byte>.Empty;
+
+            if (name == Input.EventKey)
+                Input.HandleKeyReport(playerSlot, payload);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Deadworks] OnClientCustomGameEvent threw: {ex}");
+        }
     }
 
     [UnmanagedCallersOnly]

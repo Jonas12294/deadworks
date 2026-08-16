@@ -1,0 +1,24 @@
+<!-- The zero-hosting image demo. dwsample.png sits in the plugin's images\
+     folder; the server compiled it to a texture, packed a VPK in memory and
+     pushed it over the game connection (UiApp.ServeImages) - no CDN, no CSDK.
+     dw://<name>.png is the shorthand the host runtime rewrites to the mounted
+     texture path. Load with `ui imgdemo`. -->
+<panel id="imgdemo" class="card">
+    <label class="big">IMAGE DEMO</label>
+    <label class="sub">dw://dwsample.png - pushed by the server, hosted nowhere</label>
+
+    <panel class="row">
+        <img src="dw://dwsample.png" class="sample" />
+        <panel class="col">
+            <label class="hint">green/magenta checker showing = image push works</label>
+            <label class="hint">drop another PNG into managed\plugins\TreeUiPlugin\images\</label>
+            <label class="hint">and reference it as dw://yourname.png - live, ~1s</label>
+        </panel>
+    </panel>
+
+    <panel class="row">
+        <button id="dashboard" class="nav" onclick="ui.load">← Dashboard</button>
+    </panel>
+
+    <label id="status" class="status">edit uis\imgdemo\ui.* and save - live</label>
+</panel>

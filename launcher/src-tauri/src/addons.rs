@@ -363,7 +363,7 @@ pub async fn prepare_and_connect(
     }
 
     if manifest.items.is_empty() {
-        return crate::connect::connect_to_server_inner(&addr);
+        return crate::connect::connect_to_server_inner(window.app_handle(), &addr);
     }
 
     let game_dir = find_game_dir()?;
@@ -459,7 +459,7 @@ pub async fn prepare_and_connect(
         serde_json::json!({ "name": "", "status": "connecting", "bytes_downloaded": 0, "total_bytes": 0, "item_index": 0, "total_items": 0 }),
     );
 
-    crate::connect::connect_to_server_inner(&addr)
+    crate::connect::connect_to_server_inner(window.app_handle(), &addr)
 }
 
 #[cfg(test)]

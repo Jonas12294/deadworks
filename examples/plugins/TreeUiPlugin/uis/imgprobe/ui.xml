@@ -1,0 +1,19 @@
+<!-- Image-push probe v4: does OUR C#-format vtex_c render, next to the CSDK
+     compiler's? A = compiler DXT1 (known good), B = our generated RGBA8888
+     (the whole runtime-image design rides on this one). -->
+<panel style="flow-children: down; background-color: #101018dd; padding: 10px; horizontal-align: right; vertical-align: center; margin-right: 24px;">
+  <label text="GENERATED VTEX PROBE v4" style="font-size: 14px; color: #00ffff;" />
+  <label id="verdict_a" text="A compiler vtex: ?" style="font-size: 11px; color: #ffffff;" />
+  <label id="verdict_b" text="B generated vtex: ?" style="font-size: 11px; color: #ffffff;" />
+  <panel style="flow-children: right; margin-top: 6px;">
+    <panel style="flow-children: down; margin-right: 12px;">
+      <label text="A compiler" style="font-size: 11px; color: #aaaaaa; horizontal-align: center;" />
+      <img id="img_a" style="width: 64px; height: 64px; background-color: #440044;" />
+    </panel>
+    <panel style="flow-children: down;">
+      <label text="B generated" style="font-size: 11px; color: #aaaaaa; horizontal-align: center;" />
+      <img id="img_b" style="width: 64px; height: 64px; background-color: #440044;" />
+    </panel>
+  </panel>
+  <label text="B shows the green/magenta checker = C# vtex encoder WORKS" style="font-size: 11px; color: #aaaaaa; margin-top: 4px;" />
+</panel>

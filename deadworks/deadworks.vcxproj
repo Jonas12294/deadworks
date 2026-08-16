@@ -194,6 +194,7 @@ if not "$(DeadlockDir)"=="" if exist "$(TargetDir)$(TargetName).pdb" copy /Y "$(
     <ClCompile Include="src\Core\Hooks\CCitadelPlayerController.cpp" />
     <ClCompile Include="src\Core\Hooks\GameEvents.cpp" />
     <ClCompile Include="src\Core\Hooks\CServerSideClientBase.cpp" />
+    <ClCompile Include="src\Core\Hooks\ClientMessages.cpp" />
     <ClCompile Include="src\Core\Hooks\PostEventAbstract.cpp" />
     <ClCompile Include="src\Core\Hooks\ReplyConnection.cpp" />
     <ClCompile Include="src\Core\Hooks\NetworkServerService.cpp" />
@@ -242,6 +243,7 @@ if not "$(DeadlockDir)"=="" if exist "$(TargetDir)$(TargetName).pdb" copy /Y "$(
     <ClInclude Include="src\Core\Hooks\CCitadelPlayerController.hpp" />
     <ClInclude Include="src\Core\Hooks\GameEvents.hpp" />
     <ClInclude Include="src\Core\Hooks\CServerSideClientBase.hpp" />
+    <ClInclude Include="src\Core\Hooks\ClientMessages.hpp" />
     <ClInclude Include="src\Core\Hooks\PostEventAbstract.hpp" />
     <ClInclude Include="src\Core\Hooks\ReplyConnection.hpp" />
     <ClInclude Include="src\Core\Hooks\NetworkServerService.hpp" />

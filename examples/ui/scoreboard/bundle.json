@@ -1,0 +1,6 @@
+{
+    "name": "dwscoreboard",
+    "copy": [
+        { "from": "../deadworks.js", "to": "panorama/scripts/dwcore3.js" }
+    ]
+}

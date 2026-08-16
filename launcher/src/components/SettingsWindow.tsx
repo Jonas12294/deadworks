@@ -34,7 +34,14 @@ function SettingRow({
 }
 
 export default function SettingsWindow() {
-  const { apiEndpoint, setApiEndpoint, telemetryEnabled, setTelemetryEnabled } = useSettings();
+  const {
+    apiEndpoint,
+    setApiEndpoint,
+    telemetryEnabled,
+    setTelemetryEnabled,
+    customUiEnabled,
+    setCustomUiEnabled,
+  } = useSettings();
   const [activeSection, setActiveSection] = useState("general");
   const [autostart, setAutostart] = useState(false);
   const [detectedPath, setDetectedPath] = useState<string | null>(null);
@@ -214,6 +221,23 @@ export default function SettingsWindow() {
                     onClick={() => emitTo("main", "check-for-updates")}
                   >
                     Check Now
+                  </button>
+                }
+              />
+
+              <div className={styles.sectionSubtitle}>Server custom UI</div>
+
+              <SettingRow
+                title="Allow servers to replace game UI"
+                description="Servers can send their own Panorama UI, which is downloaded and loaded into the game while you are connected, then removed when you leave. This runs server-provided content on your machine, so it is off unless you turn it on."
+                control={
+                  <button
+                    className={cn(styles.toggle, customUiEnabled && styles.toggleOn)}
+                    onClick={() => setCustomUiEnabled(!customUiEnabled)}
+                    role="switch"
+                    aria-checked={customUiEnabled}
+                  >
+                    <span className={styles.toggleThumb} />
                   </button>
                 }
               />

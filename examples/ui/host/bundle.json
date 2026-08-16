@@ -1,0 +1,7 @@
+{
+    "name": "dwhost",
+    "copy": [
+        { "from": "../deadworks.js", "to": "panorama/scripts/dwcore5.js" }
+    ],
+    "csharpConst": "../../../managed/DeadworksManaged.Api/UI/UiHostBundle.cs"
+}

@@ -1,0 +1,141 @@
+/* Styles for the server-data dashboard (ui.xml). Edit and save - live.
+   Panorama tip: children with horizontal-align/vertical-align leave the flow
+   and can overlap siblings, so this stays flow-only. */
+
+.dash {
+    flow-children: down;
+    horizontal-align: right;
+    vertical-align: top;
+    margin-top: 110px;
+    margin-right: 20px;
+    width: 380px;
+    height: fit-children;
+    background-color: #0c0c14f2;
+    border: 2px solid #00ffff55;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.titlebar {
+    flow-children: right;
+    width: 100%;
+    height: 24px;
+}
+
+.title {
+    font-size: 17px;
+    font-weight: bold;
+    color: #00ffff;
+    letter-spacing: 1px;
+    width: 240px;
+}
+
+.navbtn {
+    background-color: #221133;
+    border: 1px solid #aa66ff88;
+    border-radius: 3px;
+    padding: 2px 8px;
+    color: #cc99ff;
+    font-size: 12px;
+    height: 22px;
+}
+
+.navbtn:hover { background-color: #442266; }
+
+.conn {
+    font-size: 12px;
+    color: #ffb000;
+}
+
+.you {
+    font-size: 12px;
+    color: #88ddff;
+    margin-bottom: 8px;
+}
+
+/* stat tiles */
+.statsrow {
+    flow-children: right;
+    width: 100%;
+    height: fit-children;
+}
+
+.stat {
+    flow-children: down;
+    width: 112px;
+    height: 52px;
+    background-color: #14141f;
+    border: 1px solid #223344;
+    border-radius: 4px;
+    margin-right: 5px;
+    padding: 5px 8px;
+}
+
+.statlabel {
+    font-size: 10px;
+    color: #668877;
+    letter-spacing: 1px;
+}
+
+.statval {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.section {
+    font-size: 11px;
+    color: #556;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: 3px;
+}
+
+/* server action buttons */
+.actions {
+    flow-children: right;
+    width: 100%;
+    height: fit-children;
+    margin-bottom: 2px;
+}
+
+.act {
+    background-color: #003344;
+    border: 1px solid #00ffff88;
+    border-radius: 3px;
+    padding: 4px 8px;
+    margin-right: 5px;
+    color: #00ffff;
+    font-size: 13px;
+    height: 26px;
+}
+
+.act:hover {
+    background-color: #006680;
+}
+
+/* player table - rows are pre-created and flow down */
+.thead {
+    flow-children: right;
+    width: 100%;
+    height: 16px;
+}
+
+.prow {
+    flow-children: right;
+    width: 100%;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.cname { width: 196px; font-size: 14px; color: #cceeff; overflow: noclip; }
+.cnum { width: 34px; font-size: 14px; color: #ddddee; text-align: right; overflow: noclip; }
+.cnw  { width: 88px; font-size: 14px; color: #99ffdd; text-align: right; overflow: noclip; }
+
+/* event feed */
+.evline {
+    font-size: 12px;
+    color: #99aabb;
+    height: 15px;
+    overflow: noclip;
+}

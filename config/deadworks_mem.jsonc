@@ -221,6 +221,12 @@
 		"INetworkServerService::StartupServer": 26,
 		"IGameEventManager2::FireEvent": 7,
 		"IGameEventSystem::PostEventAbstract": 16,
+		// Read out of server.dll, not counted from the header: the game's own
+		// CCustomGameEventManager registers its incoming-280 handler through
+		// vtable[12] and reads the sending player from vtable[19]. Consistent
+		// with PostEventAbstract=16 and ProcessQueuedEvents=18.
+		"IGameEventSystem::RegisterGameEventHandlerAbstract": 12,
+		"IGameEventSystem::GetEventSource": 19,
 		"CBaseEntity::StartTouch": 148,
 		"CBaseEntity::EndTouch": 150,
 		"ISource2GameEntities::CheckTransmit": 12,

@@ -1,0 +1,66 @@
+<!-- Deadworks server-data test dashboard. Everything below the header is filled
+     LIVE by the server streaming data - match clock, player count, the table
+     and the event feed cannot exist without the server. Markup + CSS + JS all
+     editable live.
+
+     Note: CSS classes only style these MARKUP nodes (styles are baked in
+     server-side). Panels created at runtime in JS get no class styling, so the
+     player rows and event lines are pre-created here and JS only fills their
+     text / visibility - the same static-layout, dynamic-values pattern the
+     scoreboard uses. -->
+<panel id="dash" class="dash">
+    <panel class="titlebar">
+        <label class="title">SERVER LIVE DATA</label>
+        <button id="hello" class="navbtn" onclick="ui.load">Hello UI →</button>
+    </panel>
+    <label id="conn" class="conn">waiting for server…</label>
+    <!-- personal: only this player's copy of the emit carries these -->
+    <label id="you" class="you">…</label>
+
+    <panel class="statsrow">
+        <panel class="stat">
+            <label class="statlabel">MATCH CLOCK</label>
+            <label id="statClock" class="statval">--</label>
+        </panel>
+        <panel class="stat">
+            <label class="statlabel">PLAYERS</label>
+            <label id="statPlayers" class="statval">--</label>
+        </panel>
+        <panel class="stat">
+            <label class="statlabel">PUSH #</label>
+            <label id="statTick" class="statval">--</label>
+        </panel>
+    </panel>
+
+    <label class="section">SERVER ACTIONS · click, or say  !act gold|level|launch|reset</label>
+    <panel class="actions">
+        <button id="gold" class="act" onclick="act.do">+1000 Gold</button>
+        <button id="level" class="act" onclick="act.do">Level +1</button>
+        <button id="launch" class="act" onclick="act.do">Launch</button>
+        <button id="reset" class="act" onclick="act.do">Reset</button>
+    </panel>
+
+    <label class="section">PLAYERS · streamed from the server</label>
+    <panel class="thead">
+        <label class="cname">NAME</label>
+        <label class="cnum">K</label>
+        <label class="cnum">D</label>
+        <label class="cnw">NET</label>
+    </panel>
+    <panel id="prow0" class="prow" visible="false"><label id="pn0" class="cname" /><label id="pk0" class="cnum" /><label id="pd0" class="cnum" /><label id="pw0" class="cnw" /></panel>
+    <panel id="prow1" class="prow" visible="false"><label id="pn1" class="cname" /><label id="pk1" class="cnum" /><label id="pd1" class="cnum" /><label id="pw1" class="cnw" /></panel>
+    <panel id="prow2" class="prow" visible="false"><label id="pn2" class="cname" /><label id="pk2" class="cnum" /><label id="pd2" class="cnum" /><label id="pw2" class="cnw" /></panel>
+    <panel id="prow3" class="prow" visible="false"><label id="pn3" class="cname" /><label id="pk3" class="cnum" /><label id="pd3" class="cnum" /><label id="pw3" class="cnw" /></panel>
+    <panel id="prow4" class="prow" visible="false"><label id="pn4" class="cname" /><label id="pk4" class="cnum" /><label id="pd4" class="cnum" /><label id="pw4" class="cnw" /></panel>
+    <panel id="prow5" class="prow" visible="false"><label id="pn5" class="cname" /><label id="pk5" class="cnum" /><label id="pd5" class="cnum" /><label id="pw5" class="cnw" /></panel>
+    <panel id="prow6" class="prow" visible="false"><label id="pn6" class="cname" /><label id="pk6" class="cnum" /><label id="pd6" class="cnum" /><label id="pw6" class="cnw" /></panel>
+    <panel id="prow7" class="prow" visible="false"><label id="pn7" class="cname" /><label id="pk7" class="cnum" /><label id="pd7" class="cnum" /><label id="pw7" class="cnw" /></panel>
+
+    <label class="section">EVENT FEED · pushed as it happens</label>
+    <label id="ev0" class="evline" />
+    <label id="ev1" class="evline" />
+    <label id="ev2" class="evline" />
+    <label id="ev3" class="evline" />
+    <label id="ev4" class="evline" />
+    <label id="ev5" class="evline" />
+</panel>

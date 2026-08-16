@@ -192,12 +192,24 @@ pub struct ConnectResult {
 /// Open `steam://connect/<addr>` which tells Steam to launch/join the server.
 /// `addr` must be a raw `ip:port` pair; anything else is rejected so the API
 /// (or a deep link) cannot smuggle extra URL segments into Steam's handler.
-pub(crate) fn connect_to_server_inner(addr: &str) -> Result<ConnectResult, String> {
+pub(crate) fn connect_to_server_inner(
+    app: &tauri::AppHandle,
+    addr: &str,
+) -> Result<ConnectResult, String> {
     if !crate::deep_link::is_valid_ip_port(addr) {
         return Err(format!("invalid server address: {}", addr));
     }
     let steam_url = format!("steam://connect/{}", addr);
     open::that(&steam_url).map_err(|e| format!("Failed to open Steam: {}", e))?;
+
+    // Every connect path comes through here, so it's the one place worth
+    // arming the client module from. Runs in the background and never blocks or
+    // fails the connect - worst case they just get the server's stock UI.
+    #[cfg(windows)]
+    crate::inject::spawn_inject_watch(app);
+    #[cfg(not(windows))]
+    let _ = app;
+
     Ok(ConnectResult {
         success: true,
         method: "steam_connect".into(),

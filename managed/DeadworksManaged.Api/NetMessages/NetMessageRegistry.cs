@@ -95,36 +95,62 @@ public static class NetMessageRegistry
 		// CLC_Messages:           clc_Foo          -> CCLCMsg_Foo
 		// SVC_Messages:           svc_Foo          -> CSVCMsg_Foo
 		// EBaseGameEvents:        GE_Foo           -> various
+		// EBaseClientMessages:    CM_Foo           -> CClientMsg_Foo
+		//
+		// Some enums have more than one convention in play: most of
+		// EBaseUserMessages maps to CUserMessageFoo, but a handful of the newer
+		// entries are named CUserMsg_Foo instead (CUserMsg_CustomGameEvent,
+		// CUserMsg_HudError). So each enum gets a list of candidate mappers and
+		// the first one that resolves to a real type wins.
 
-		Func<string, string?>? mapper = enumDesc.Name switch
+		Func<string, string?>[]? mappers = enumDesc.Name switch
 		{
-			"NET_Messages" => MapNetMsg,
-			"CitadelUserMessageIds" => MapCitadelUserMsg,
-			"ECitadelClientMessages" => MapCitadelClientMsg,
-			"EBaseUserMessages" => MapBaseUserMsg,
-			"EBaseEntityMessages" => MapBaseEntityMsg,
-			"CLC_Messages" => MapClcMsg,
-			"SVC_Messages" => MapSvcMsg,
-			"EBaseGameEvents" => MapBaseGameEvent,
-			"SVC_Messages_LowFrequency" => MapSvcMsgLowFreq,
-			"Bidirectional_Messages" => MapBidirectionalMsg,
-			"Bidirectional_Messages_LowFrequency" => MapBidirectionalMsgLowFreq,
-			"ETEProtobufIds" => MapTEMsg,
+			"NET_Messages" => [MapNetMsg],
+			"CitadelUserMessageIds" => [MapCitadelUserMsg],
+			"ECitadelClientMessages" => [MapCitadelClientMsg],
+			"EBaseUserMessages" => [MapBaseUserMsg, MapBaseUserMsgAlt],
+			"EBaseEntityMessages" => [MapBaseEntityMsg],
+			"EBaseClientMessages" => [MapBaseClientMsg],
+			"CLC_Messages" => [MapClcMsg],
+			"SVC_Messages" => [MapSvcMsg],
+			"EBaseGameEvents" => [MapBaseGameEvent],
+			"SVC_Messages_LowFrequency" => [MapSvcMsgLowFreq],
+			"Bidirectional_Messages" => [MapBidirectionalMsg],
+			"Bidirectional_Messages_LowFrequency" => [MapBidirectionalMsgLowFreq],
+			"ETEProtobufIds" => [MapTEMsg],
 			_ => null
 		};
 
-		if (mapper == null) return;
+		if (mappers == null) return;
 
 		foreach (var value in enumDesc.Values)
 		{
-			var className = mapper(value.Name);
-			if (className == null) continue;
-
-			if (typesByProtoName.TryGetValue(className, out var type))
+			foreach (var mapper in mappers)
 			{
-				Register(type, value.Number);
+				var className = mapper(value.Name);
+				if (className == null) continue;
+
+				if (typesByProtoName.TryGetValue(className, out var type))
+				{
+					Register(type, value.Number);
+					break;
+				}
 			}
 		}
+	}
+
+	/// <summary>UM_Foo -> CUserMsg_Foo, the convention used by newer base user messages.</summary>
+	private static string? MapBaseUserMsgAlt(string name)
+	{
+		if (!name.StartsWith("UM_")) return null;
+		return "CUserMsg_" + name["UM_".Length..];
+	}
+
+	/// <summary>CM_Foo -> CClientMsg_Foo.</summary>
+	private static string? MapBaseClientMsg(string name)
+	{
+		if (!name.StartsWith("CM_")) return null;
+		return "CClientMsg_" + name["CM_".Length..];
 	}
 
 	private static void Register(Type messageType, int id)

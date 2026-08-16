@@ -19,6 +19,19 @@ internal static class ConCommandManager
         RegisterBuiltInCommand("dw_reloadconfig", "Reload plugin configs. Usage: dw_reloadconfig [PluginName]", true, OnReloadConfig);
         RegisterBuiltInCommand("dw_plugin", "Manage plugins. Usage: dw_plugin <list|enable|disable|commands> [PluginName]", true, OnPluginCommand);
         RegisterBuiltInCommand("dw_help", "List all available commands.", false, OnHelp);
+
+        // Custom UI panels dispatch this as a console command; it is the only way
+        // Panorama can reach the server. It needs the remote-client flag or the
+        // engine drops it before it ever gets here.
+        RegisterBuiltInCommand(UI.ActionCommand,
+            "Internal: carries a custom UI action from a player's panel to UI.On handlers.",
+            false, OnUiAction, FCVar.GameDllForRemoteClients);
+    }
+
+    /// <summary>The payload is base64 and therefore a single token; UI validates it.</summary>
+    private static void OnUiAction(ConCommandContext ctx)
+    {
+        UI.HandleAction(ctx.CallerSlot, ctx.ArgString);
     }
 
     private static void OnReloadConfig(ConCommandContext ctx)
@@ -175,7 +188,8 @@ internal static class ConCommandManager
         }
     }
 
-    internal static void RegisterBuiltInCommand(string name, string description, bool serverOnly, Action<ConCommandContext> handler)
+    internal static void RegisterBuiltInCommand(string name, string description, bool serverOnly,
+        Action<ConCommandContext> handler, FCVar extraFlags = FCVar.None)
     {
         Action<ConCommandContext> wrapped = serverOnly
             ? ctx =>
@@ -191,7 +205,7 @@ internal static class ConCommandManager
 
         AddHandler(name, wrapped);
 
-        NativeRegisterConCommand(name, description, BuildConCommandFlags(serverOnly));
+        NativeRegisterConCommand(name, description, BuildConCommandFlags(serverOnly) | extraFlags);
 
         Console.WriteLine($"[ConCommandManager] Registered built-in concommand: {name}{(serverOnly ? " (server-only)" : "")}");
     }

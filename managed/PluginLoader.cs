@@ -245,6 +245,7 @@ internal static partial class PluginLoader
             RegisterPluginEventHandlers(normalizedPath, plugins);
             RegisterPluginNetMessageHandlers(normalizedPath, plugins);
             RegisterPluginEntityIOHooks(normalizedPath, plugins);
+            RegisterPluginUiActionHandlers(normalizedPath, plugins);
             RegisterPluginChatCommands(normalizedPath, plugins);
             ConCommandManager.RegisterPlugin(normalizedPath, plugins);
             Commands.CommandRegistration.RegisterPluginCommands(normalizedPath, plugins, _chatCommandRegistry);
@@ -262,6 +263,7 @@ internal static partial class PluginLoader
             _eventRegistry.UnregisterPlugin(normalizedPath);
             UnregisterPluginNetMessageHandlers(normalizedPath);
             UnregisterPluginEntityIOHooks(normalizedPath);
+            UnregisterPluginUiActionHandlers(normalizedPath);
             _chatCommandRegistry.UnregisterPlugin(normalizedPath);
             ConCommandManager.UnregisterPlugin(normalizedPath);
             PluginRegistrationTracker.Remove(normalizedPath);
@@ -274,6 +276,10 @@ internal static partial class PluginLoader
                 // Dispose timer service before OnUnload so timers stop firing
                 TimerRegistry.GetService(plugin)?.Dispose();
                 TimerRegistry.Unregister(plugin);
+
+                // UI apps the plugin never disposed must not outlive it.
+                UiAppRegistry.DisposePlugin(plugin);
+                Input.DisposePlugin(plugin);
 
                 plugin.OnUnload();
                 Console.WriteLine($"[PluginLoader] Unloaded plugin: {plugin.Name}");
@@ -505,6 +511,7 @@ internal static partial class PluginLoader
             _entityInputHooks.Clear();
             _entityOutputHooks.Clear();
             _pluginEntityIOHandlers.Clear();
+            ClearUiActionHandlers();
         }
 
         ConCommandManager.Clear();
@@ -520,6 +527,8 @@ internal static partial class PluginLoader
             {
                 try
                 {
+                    UiAppRegistry.DisposePlugin(plugin);
+                    Input.DisposePlugin(plugin);
                     plugin.OnUnload();
                     Console.WriteLine($"[PluginLoader] Unloaded plugin: {plugin.Name}");
                 }

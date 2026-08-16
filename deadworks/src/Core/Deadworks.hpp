@@ -84,6 +84,9 @@ public:
                                  void *activator, void *caller, const void *variantValue, float delay);
     // Usercmds
     void OnPre_ProcessUsercmds(int playerSlot, const uint8_t *batchBytes, int batchLen, int numCmds, bool paused, float margin, uint8_t *outBytes, int *outLen);
+
+    /// A client->server custom game event (message 280) arrived, e.g. a key report.
+    void OnClientCustomGameEvent(int playerSlot, const char *eventName, const uint8_t *data, int dataLen);
     // Ability think - returns bitmask of buttons to block, outForcedButtons receives bits to force
     uint64_t OnPre_AbilityThink(int playerSlot, void *pawnEntity, uint64_t heldButtons, uint64_t changedButtons, uint64_t scrollButtons, uint64_t *outForcedButtons);
     // AddModifier
